@@ -53,7 +53,10 @@ def _perturb_current_joint_pos_and_get_eef_pose(env, env_id: int, eef_name: str,
     asset.set_joint_position_target(joint_pos, env_ids=env_ids)
     asset.set_joint_velocity_target(joint_vel, env_ids=env_ids)
     asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
-    return env.get_robot_eef_pose(env_ids=[env_id], eef_name=eef_name)[0]
+    eef_pose = env.get_robot_eef_pose(env_ids=[env_id], eef_name=eef_name)[0]
+    if os.environ.get("PERTURB_ALL_SUBTASKS_DEBUG"):
+        print(f"PERTURB_ALL_SUBTASKS_DEBUG env_id={env_id} std={std} eef_pos={eef_pose[:3, 3].tolist()}", flush=True)
+    return eef_pose
 
 from isaaclab_mimic.datagen.datagen_info import DatagenInfo
 from isaaclab_mimic.datagen.selection_strategy import make_selection_strategy
