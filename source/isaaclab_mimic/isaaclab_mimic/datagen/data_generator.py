@@ -8,6 +8,7 @@
 import asyncio
 import copy
 import logging
+import os
 from typing import Any
 
 import numpy as np
@@ -24,6 +25,35 @@ from isaaclab.envs import (
     SubTaskConstraintType,
 )
 from isaaclab.managers import TerminationTermCfg
+
+
+def _perturb_current_joint_pos_and_get_eef_pose(env, env_id: int, eef_name: str, std: float) -> torch.Tensor:
+    """Add gaussian noise (radians) to the robot's arm joints around its **current** joint
+    position, physically write the perturbed state into sim, and return the resulting
+    end-effector pose.
+
+    Used to extend start-pose perturbation (see `franka_stack_events.randomize_joint_by_gaussian_offset`,
+    which only fires at `env.reset()` and therefore only affects the very first subtask) to every
+    subtask boundary. Perturbs around the robot's *current* joint state rather than its
+    reset/default pose, since mid-rollout the robot may be holding an object - and, unlike the
+    reset-time version, never touches the last two (gripper) joints at all, so a held object is
+    never dropped by this call. Opt-in via the `PERTURB_ALL_SUBTASKS_STD` env var (see
+    `merge_eef_subtask_trajectory`); with it unset, this function is never called and behavior
+    is byte-for-byte unchanged from before.
+    """
+    env_ids = torch.tensor([env_id], device=env.device)
+    asset = env.scene["robot"]
+    joint_pos = asset.data.joint_pos[env_ids].clone()
+    joint_pos[:, :-2] += PoseUtils.sample_gaussian(0.0, std, joint_pos[:, :-2].shape, joint_pos.device)
+    joint_pos_limits = asset.data.soft_joint_pos_limits[env_ids]
+    joint_pos = joint_pos.clamp_(joint_pos_limits[..., 0], joint_pos_limits[..., 1])
+    # Gripper joints (last 2) are left completely untouched - not noised, not clamped-and-restored,
+    # just never included in the offset - so a held object can't be dropped by this perturbation.
+    joint_vel = torch.zeros_like(joint_pos)
+    asset.set_joint_position_target(joint_pos, env_ids=env_ids)
+    asset.set_joint_velocity_target(joint_vel, env_ids=env_ids)
+    asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+    return env.get_robot_eef_pose(env_ids=[env_id], eef_name=eef_name)[0]
 
 from isaaclab_mimic.datagen.datagen_info import DatagenInfo
 from isaaclab_mimic.datagen.selection_strategy import make_selection_strategy
@@ -584,6 +614,16 @@ class DataGenerator:
             # Interpolation segment will start from last target pose (which may not have been achieved).
             assert prev_executed_traj is not None
             last_waypoint = prev_executed_traj[-1]
+            # Opt-in: extend start-pose perturbation to every subtask boundary, not just the first
+            # (see docs/接触锚定扰动增广_实验记录_v1.md). Unset by default -> no behavior change.
+            perturb_all_subtasks_std = os.environ.get("PERTURB_ALL_SUBTASKS_STD")
+            if perturb_all_subtasks_std:
+                perturbed_pose = _perturb_current_joint_pos_and_get_eef_pose(
+                    self.env, env_id, eef_name, float(perturb_all_subtasks_std)
+                )
+                last_waypoint = Waypoint(
+                    pose=perturbed_pose, gripper_action=last_waypoint.gripper_action, noise=last_waypoint.noise
+                )
             init_sequence = WaypointSequence(sequence=[last_waypoint])
         else:
             # Interpolation segment will start from current robot eef pose.
