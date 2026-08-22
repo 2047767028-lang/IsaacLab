@@ -37,7 +37,7 @@ import time
 import h5py
 import numpy as np
 
-TASK = "Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-Mimic-v0"
+TASK = "Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-Mimic-Perturbed-v0"
 INPUT_FILE = "./datasets/annotated_dataset.hdf5"
 OUTPUT_ROOT = "./datasets/pi05_training_data_v1"
 NUM_ENVS = 10

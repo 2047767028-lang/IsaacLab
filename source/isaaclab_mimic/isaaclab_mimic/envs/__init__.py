@@ -174,3 +174,21 @@ gym.register(
     },
     disable_env_checker=True,
 )
+
+##
+# Camera-equipped counterpart of the above, wired to the same PERTURB_STD/PERTURB_SEED/
+# PERTURB_FIXED_ATTEMPTS env vars (needed for the pi0.5 production data run - see
+# franka_stack_ik_rel_visuomotor_perturbed_mimic_env_cfg.py docstring for why the plain
+# visuomotor task silently ignores those env vars while this one honors them).
+##
+gym.register(
+    id="Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-Mimic-Perturbed-v0",
+    entry_point=f"{__name__}.franka_stack_ik_rel_mimic_env:FrankaCubeStackIKRelMimicEnv",
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.franka_stack_ik_rel_visuomotor_perturbed_mimic_env_cfg:"
+            "FrankaCubeStackIKRelVisuomotorPerturbedMimicEnvCfg"
+        ),
+    },
+    disable_env_checker=True,
+)
