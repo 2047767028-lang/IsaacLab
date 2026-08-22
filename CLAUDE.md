@@ -269,6 +269,47 @@ record → annotate → generate 全流程，用的是**官方自带的 10 条�
 ⚠️ **这条主线的执行方式（用户当场定的规矩）**：即使是 goat 模式/自动化运行，
 每步源码/脚本改动仍必须单独 `git commit`，不许因为无人盯着就放宽或攒批提交。
 
+## 主线二·第二层验证启动（2026-08-22，训练在用户的实验室高性能服务器上做，训pi0.5）
+
+**发现①（阻塞性，已解决）**：之前所有σ/幅度扫描用的都是纯状态任务（`...-Perturbed-v0`），
+**生成的hdf5里没有任何图像观测**（`obs`只有`eef_pos`/`joint_pos`等状态量）——pi0.5是
+视觉-语言-动作模型，这批数据不能直接训练。**已确认解法且验证通过**：仓库里本来就有
+配套的、已注册的带摄像头变体`Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-Mimic-v0`
+（`wrist_cam`+`table_cam`，各200×200 RGB uint8），**弧线扰动机制是写在通用MimicGen生成
+代码里的，不绑定在我们专属的env cfg上，直接换`--task`成这个visuomotor变体、配合
+`PERTURB_ARC_STD`环境变量，不用写任何新代码就能生成带图像的扰动数据**——冒烟测试
+（`Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-Mimic-v0` + `PERTURB_ARC_STD=0.012`）已验证
+图像渲染正常（人工看过`table_cam`/`wrist_cam`截图，机械臂和方块清晰可见，不是黑屏/花屏）。
+
+**发现②：仿真评测基础设施现状**——场景资产有（同一个任务）；`scripts/imitation_learning/
+robomimic/`下有现成的评测脚本(`play.py`/`robust_eval.py`)，但**只认robomimic自己训练的
+policy checkpoint，不支持pi0.5**；仓库里搜不到任何openpi/pi0/policy_server相关代码，
+**没有现成的pi0.5仿真评测桥接**，需要仿照用户之前genie_sim项目里那套policy server模式
+自己搭，目前是空白，暂不阻塞训练（测评是训完之后的事）；也没有把robomimic-hdf5转
+LeRobot格式的现成脚本，如果OpenPI训练流程需要LeRobot格式，这步也要自己搭。
+
+**OpenPI/pi0.5数据量研究结论（查了`huggingface/lerobot`官方仓库issue和`AGENT_GUIDE.md`，
+不是转述）**：LeRobot官方维护者对"pi0.5微调简单抓取放置任务需要多少数据"的原话回复——
+"~50 episodes is a reasonable start for a single-location PnP; go to 100-200 if you vary
+object/position."（[issue #2378](https://github.com/huggingface/lerobot/issues/2378)）。
+我们的任务方块位置每次都变，属于"vary object/position"这一档，**官方建议100~200条**。
+`AGENT_GUIDE.md` 7.3节训练配置表以"~50条"为基准定pi0/pi05的训练步数（batch 1~4，
+30k~80k步，显存受限需梯度累积）。**结论：数据量这块不用追求"越多越好"，是有边际收益
+递减的**，用户已经认可这个判断，不再沿用之前832条那个量级。
+
+**渲染并行度测试（2026-08-22）**：渲染版本比纯状态生成慢约20倍（0.4s→9.7s/次尝试，
+num_envs=10，GPU渲染，CPU渲染更慢——曾经CPU渲染跑一次卡了3分钟才刚过场景加载就被
+主动换成GPU）。⚠️ **还会复发的坑：更高并行度不稳定**——测过num_envs=24，显存到
+11.3GB/12.3GB（92%），前47次尝试确实更快（约7.7s/次），但**之后卡死6分多钟零进展**，
+同时GPU仍85%利用率、CPU仍182%——吃资源但不推进，性质上类似之前的SIGPIPE卡死信号，
+但这次没有subprocess.PIPE那层，根因没查清楚。**已放弃更高并行度，正式生产统一用
+num_envs=10**（全程验证过的配置，稳定性优先于多出的那点吞吐）。
+
+**当前状态**：⬜ 正式生产两组带图像训练数据进行中——A组(基线,`PERTURB_ARC_STD=0`)、
+B组(我们的方法,`PERTURB_ARC_STD=0.012`)，每组目标约300条成功demo（官方建议上限的
+1.5倍），`num_envs=10`、`PERTURB_FIXED_ATTEMPTS=1`模式、每组尝试预算1050次（留余量），
+预计A组约2.2小时、B组约2.4小时，合计约4.6小时，12小时预算内留够缓冲。
+
 ## 改动纪律
 
 - **源码/功能改动（`.py`/`.sh`/`.yaml`/`.json` 等）→ 改完就 `git commit`**，
