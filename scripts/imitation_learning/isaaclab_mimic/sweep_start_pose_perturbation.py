@@ -130,13 +130,16 @@ def run_one_point(sigma: float, seed: int, args) -> dict:
 
     print(f"\n=== seed={seed} sigma={sigma} (PERTURB_STD={sigma} PERTURB_SEED={seed}) -> {output_file} ===", flush=True)
     t0 = time.time()
-    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    # Redirect the child's stdout/stderr straight to a file instead of capture_output=True's
+    # PIPEs. With PIPEs, the read end lives in this process; if this wrapper is ever killed
+    # (e.g. by whatever mechanism killed the first sweep run, still unconfirmed), the child's
+    # stdout/stderr pipes are closed out from under it, and if it does not handle that cleanly
+    # (SIGPIPE/EPIPE on its next write) it can end up spinning instead of exiting. Writing
+    # directly to a file has no reader to lose, so the child can't get stuck this way regardless
+    # of what happens to this wrapper process.
+    with open(log_path, "w") as log_f:
+        result = subprocess.run(cmd, env=env, stdout=log_f, stderr=subprocess.STDOUT)
     wall_seconds = time.time() - t0
-
-    with open(log_path, "w") as f:
-        f.write(result.stdout)
-        f.write("\n----- STDERR -----\n")
-        f.write(result.stderr)
 
     if result.returncode != 0:
         print(f"!!! seed={seed} sigma={sigma} FAILED (exit code {result.returncode}); see {log_path}", flush=True)
