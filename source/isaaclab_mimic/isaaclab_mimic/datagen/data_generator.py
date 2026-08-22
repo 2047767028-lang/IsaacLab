@@ -32,7 +32,12 @@ from isaaclab_mimic.datagen.selection_strategy import make_selection_strategy
 from isaaclab_mimic.datagen.waypoint import MultiWaypoint, Waypoint, WaypointSequence, WaypointTrajectory
 
 
-def _apply_arc_perturbation(poses: torch.Tensor, magnitude: float, freeze_frac: float) -> torch.Tensor:
+def _apply_arc_perturbation(
+    poses: torch.Tensor,
+    magnitude: float,
+    freeze_frac: float,
+    peak_frac_range: tuple[float, float] = (0.5, 0.5),
+) -> torch.Tensor:
     """Reshape a fixed target pose sequence into a smooth, single-direction "arc" detour through
     its middle, converging back to the exact original poses (in both position AND rate of change)
     at the very start and for the last `freeze_frac` fraction of frames (the "tail" nearest the
@@ -50,10 +55,23 @@ def _apply_arc_perturbation(poses: torch.Tensor, magnitude: float, freeze_frac: 
 
     v2 sidesteps the whole question by pushing density to its limit: every single frame in the
     free zone gets its own offset directly from a continuous envelope, rather than a few sampled
-    control points connected by straight lines - there is no line segment to kink. The envelope
-    is `sin(pi*u)**2`, not `sin(pi*u)`: both its *value* and its *derivative* are exactly 0 at
-    u=0 and u=1, so there is no discontinuity in either position or rate of change at either the
-    entry point or the freeze-zone boundary.
+    control points connected by straight lines - there is no line segment to kink.
+
+    v3 (this version) generalizes the envelope from the fixed, symmetric `sin(pi*u)**2` to a
+    `u**a * (1-u)**b` family whose peak location `u* = a/(a+b)` is tunable via `peak_frac_range`,
+    instead of being locked to the zone's midpoint (u*=0.5, a=b). This was the user's own
+    observation: the arc is a half-period bump with fixed endpoints and fixed peak height, but
+    where along the zone the peak sits was still a free variable the design wasn't using -
+    randomizing it adds another axis of trajectory diversity. `a` and `b` are derived from the
+    sampled peak fraction `p` via a fixed order `n=6` (`a=6p`, `b=6(1-p)`), which is what keeps
+    both endpoints at exactly zero value AND zero derivative (needs a>1 and b>1) for any
+    `p` in the valid range; `peak_frac_range` is therefore clamped to (1/6, 5/6) internally so a
+    caller can't accidentally request a peak location the order-6 family can't support smoothly.
+    At `p=0.5` (a=b=3) this reduces to the same qualitative shape as the old `sin(pi*u)**2` -
+    smooth, symmetric, single peak at the zone's midpoint - just from a different function family;
+    it is not byte-identical to the old curve, but has the same endpoint value/derivative
+    guarantees. Each call samples its own `direction` (shared, non-zigzag) AND its own peak
+    fraction (when `peak_frac_range` spans a nonzero interval) independently per subtask.
 
     Never touches the live simulation - only reshapes the *target* pose sequence that gets
     executed via the normal, already-smooth interpolation + physics-stepped control loop, so a
@@ -64,8 +82,11 @@ def _apply_arc_perturbation(poses: torch.Tensor, magnitude: float, freeze_frac: 
     Args:
         poses: (T, 4, 4) fixed target pose sequence for one subtask (object-transformed source
             demo segment - unchanged regardless of this perturbation).
-        magnitude: peak offset magnitude in meters, reached at the free zone's midpoint.
+        magnitude: peak offset magnitude in meters, reached at the sampled peak fraction.
         freeze_frac: fraction of the trajectory (from the end) left completely untouched.
+        peak_frac_range: (min, max) to uniformly sample the peak's fractional position within the
+            free zone from. Default (0.5, 0.5) is deterministic - peak always at the midpoint,
+            matching the original symmetric behavior. Internally clamped to (1/6, 5/6).
 
     Returns:
         (T, 4, 4) pose sequence, same shape as input.
@@ -79,8 +100,20 @@ def _apply_arc_perturbation(poses: torch.Tensor, magnitude: float, freeze_frac: 
     direction = torch.randn(3, device=device)
     direction = direction / (direction.norm() + 1e-8)
 
-    u = torch.linspace(0.0, 1.0, free_len, device=device)
-    envelope = torch.sin(math.pi * u) ** 2  # value AND derivative are 0 at u=0 and u=1
+    lo, hi = peak_frac_range
+    lo = max(lo, 1.0 / 6.0 + 1e-3)
+    hi = min(hi, 5.0 / 6.0 - 1e-3)
+    hi = max(hi, lo)  # keep a valid (possibly degenerate) interval even if the caller's range collapses under clamping
+    peak_frac = lo if lo >= hi else (lo + (hi - lo) * torch.rand(1, device=device).item())
+
+    order = 6.0
+    a = order * peak_frac
+    b = order * (1.0 - peak_frac)
+    peak_value = (peak_frac**a) * ((1.0 - peak_frac) ** b)
+
+    u = torch.linspace(0.0, 1.0, free_len, device=device).clamp(1e-6, 1.0 - 1e-6)  # avoid 0**a/0**b edge case
+    raw = (u**a) * ((1.0 - u) ** b)
+    envelope = raw / peak_value  # value AND derivative are 0 at u=0 and u=1; peak=1 at u=peak_frac
     offset = direction[None, :] * magnitude * envelope[:, None]  # (free_len, 3)
 
     new_poses = poses.clone()
@@ -589,8 +622,15 @@ class DataGenerator:
         arc_std = float(os.environ.get("PERTURB_ARC_STD", "0.0"))
         if arc_std > 0.0:
             arc_freeze_frac = float(os.environ.get("PERTURB_ARC_FREEZE_FRAC", "0.3"))
+            # Peak position within the free zone. Default (0.5, 0.5) = always centered, matching
+            # prior behavior. Set both env vars to randomize where the arc's peak falls per subtask.
+            arc_peak_lo = float(os.environ.get("PERTURB_ARC_PEAK_FRAC_MIN", "0.5"))
+            arc_peak_hi = float(os.environ.get("PERTURB_ARC_PEAK_FRAC_MAX", "0.5"))
             transformed_eef_poses = _apply_arc_perturbation(
-                transformed_eef_poses, magnitude=arc_std, freeze_frac=arc_freeze_frac
+                transformed_eef_poses,
+                magnitude=arc_std,
+                freeze_frac=arc_freeze_frac,
+                peak_frac_range=(arc_peak_lo, arc_peak_hi),
             )
 
         # Construct trajectory for the transformed segment.
