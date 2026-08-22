@@ -159,3 +159,18 @@ gym.register(
     },
     disable_env_checker=True,
 )
+
+##
+# Franka Cube Stack IK Rel, with sweepable reset-time start-pose perturbation (PERTURB_STD env var)
+# for the "contact-anchored perturbation augmentation" validation experiment.
+##
+gym.register(
+    id="Isaac-Stack-Cube-Franka-IK-Rel-Mimic-Perturbed-v0",
+    entry_point=f"{__name__}.franka_stack_ik_rel_mimic_env:FrankaCubeStackIKRelMimicEnv",
+    kwargs={
+        "env_cfg_entry_point": (
+            f"{__name__}.franka_stack_ik_rel_perturbed_mimic_env_cfg:FrankaCubeStackIKRelPerturbedMimicEnvCfg"
+        ),
+    },
+    disable_env_checker=True,
+)
