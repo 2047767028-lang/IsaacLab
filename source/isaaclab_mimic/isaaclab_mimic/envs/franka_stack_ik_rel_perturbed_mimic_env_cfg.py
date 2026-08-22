@@ -23,9 +23,23 @@ class FrankaCubeStackIKRelPerturbedMimicEnvCfg(FrankaCubeStackIKRelMimicEnvCfg):
     Also makes ``datagen_config.seed`` controllable via ``PERTURB_SEED`` (defaults to the base
     class's hardcoded 1), so the same sigma grid can be re-run under independent seeds for a
     reproducibility check.
+
+    ``max_num_failures`` on ``DataGenConfig`` is dead config: `generation.py`'s env_loop only
+    checks it against ``generation_guarantee``/``num_success``/``num_attempts``, and never reads
+    ``max_num_failures`` at all (verified by grepping the whole isaaclab_mimic package - the field
+    is assigned in every env cfg but read nowhere). With the base class's default
+    ``generation_guarantee=True``, low-success-rate sigmas retry until ``generation_num_trials``
+    *successes* are banked with no bound on attempts, which is unsafe for a sweep that
+    deliberately probes into the collapsed-success-rate region. Setting ``PERTURB_FIXED_ATTEMPTS``
+    (to any non-empty value) switches ``generation_guarantee`` to False, which changes
+    ``generation_num_trials``'s meaning from "successes to collect" to "attempts to run" (see
+    ``DataGenConfig.generation_guarantee`` docstring) - giving every sigma point a hard, known
+    time bound regardless of its success rate.
     """
 
     def __post_init__(self):
         super().__post_init__()
         self.events.randomize_franka_joint_state.params["std"] = float(os.environ.get("PERTURB_STD", "0.02"))
         self.datagen_config.seed = int(os.environ.get("PERTURB_SEED", "1"))
+        if os.environ.get("PERTURB_FIXED_ATTEMPTS"):
+            self.datagen_config.generation_guarantee = False
