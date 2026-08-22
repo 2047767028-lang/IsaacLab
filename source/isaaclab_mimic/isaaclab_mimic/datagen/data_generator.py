@@ -8,6 +8,8 @@
 import asyncio
 import copy
 import logging
+import math
+import os
 from typing import Any
 
 import numpy as np
@@ -28,6 +30,62 @@ from isaaclab.managers import TerminationTermCfg
 from isaaclab_mimic.datagen.datagen_info import DatagenInfo
 from isaaclab_mimic.datagen.selection_strategy import make_selection_strategy
 from isaaclab_mimic.datagen.waypoint import MultiWaypoint, Waypoint, WaypointSequence, WaypointTrajectory
+
+
+def _apply_arc_perturbation(poses: torch.Tensor, magnitude: float, freeze_frac: float) -> torch.Tensor:
+    """Reshape a fixed target pose sequence into a smooth, single-direction "arc" detour through
+    its middle, converging back to the exact original poses (in both position AND rate of change)
+    at the very start and for the last `freeze_frac` fraction of frames (the "tail" nearest the
+    subtask's interaction/contact point stays byte-identical to the source demo).
+
+    v2 design (see docs/接触锚定扰动增广_设计记录.md and CLAUDE.md "主线二·扩展到全部subtask轨迹
+    多样化"). v1 (reverted - see git history, commit 0d2d676a2 / revert 420f7d890) picked a few
+    sparse control points and connected them with straight line segments: the sin() envelope's
+    *value* went to 0 at the zone boundary, but its *slope* did not, and consecutive linear
+    segments meeting at each control point created a real geometric kink - confirmed empirically
+    via frame-to-frame turning angle (up to 116.9° in one frame, vs. ~30° for the unperturbed
+    baseline at the same point). Sparser control points make each kink sharper; denser control
+    points approximate a smooth curve better - but "how dense is dense enough" depends on
+    `magnitude`, so density and magnitude are not independent axes for a sweep.
+
+    v2 sidesteps the whole question by pushing density to its limit: every single frame in the
+    free zone gets its own offset directly from a continuous envelope, rather than a few sampled
+    control points connected by straight lines - there is no line segment to kink. The envelope
+    is `sin(pi*u)**2`, not `sin(pi*u)`: both its *value* and its *derivative* are exactly 0 at
+    u=0 and u=1, so there is no discontinuity in either position or rate of change at either the
+    entry point or the freeze-zone boundary.
+
+    Never touches the live simulation - only reshapes the *target* pose sequence that gets
+    executed via the normal, already-smooth interpolation + physics-stepped control loop, so a
+    held object is carried along like any other real robot motion (see the reverted
+    PERTURB_ALL_SUBTASKS_STD in git history for why a live-simulation teleport does not have this
+    property). Only the translation component is perturbed; orientation is untouched.
+
+    Args:
+        poses: (T, 4, 4) fixed target pose sequence for one subtask (object-transformed source
+            demo segment - unchanged regardless of this perturbation).
+        magnitude: peak offset magnitude in meters, reached at the free zone's midpoint.
+        freeze_frac: fraction of the trajectory (from the end) left completely untouched.
+
+    Returns:
+        (T, 4, 4) pose sequence, same shape as input.
+    """
+    total_len = poses.shape[0]
+    free_len = int(round(total_len * (1.0 - freeze_frac)))
+    if magnitude <= 0.0 or free_len < 2:
+        return poses
+
+    device = poses.device
+    direction = torch.randn(3, device=device)
+    direction = direction / (direction.norm() + 1e-8)
+
+    u = torch.linspace(0.0, 1.0, free_len, device=device)
+    envelope = torch.sin(math.pi * u) ** 2  # value AND derivative are 0 at u=0 and u=1
+    offset = direction[None, :] * magnitude * envelope[:, None]  # (free_len, 3)
+
+    new_poses = poses.clone()
+    new_poses[:free_len, :3, 3] = poses[:free_len, :3, 3] + offset
+    return new_poses
 
 from .datagen_info_pool import DataGenInfoPool
 
@@ -523,6 +581,17 @@ class DataGenerator:
 
                     # Skip transformation if no reference object is provided
                     transformed_eef_poses = src_eef_poses
+
+        # Opt-in: reshape this subtask's fixed target trajectory into a smooth "arc" detour
+        # through its middle, converging back to the exact original for the tail nearest the
+        # interaction point. See _apply_arc_perturbation's docstring for the design rationale.
+        # Unset/0 by default -> transformed_eef_poses is untouched, byte-for-byte prior behavior.
+        arc_std = float(os.environ.get("PERTURB_ARC_STD", "0.0"))
+        if arc_std > 0.0:
+            arc_freeze_frac = float(os.environ.get("PERTURB_ARC_FREEZE_FRAC", "0.3"))
+            transformed_eef_poses = _apply_arc_perturbation(
+                transformed_eef_poses, magnitude=arc_std, freeze_frac=arc_freeze_frac
+            )
 
         # Construct trajectory for the transformed segment.
         transformed_seq = WaypointSequence.from_poses(
