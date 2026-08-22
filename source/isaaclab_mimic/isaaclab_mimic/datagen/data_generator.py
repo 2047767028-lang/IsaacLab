@@ -8,8 +8,6 @@
 import asyncio
 import copy
 import logging
-import math
-import os
 from typing import Any
 
 import numpy as np
@@ -30,71 +28,6 @@ from isaaclab.managers import TerminationTermCfg
 from isaaclab_mimic.datagen.datagen_info import DatagenInfo
 from isaaclab_mimic.datagen.selection_strategy import make_selection_strategy
 from isaaclab_mimic.datagen.waypoint import MultiWaypoint, Waypoint, WaypointSequence, WaypointTrajectory
-
-
-def _apply_arc_perturbation(poses: torch.Tensor, num_points: int, magnitude: float, freeze_frac: float) -> torch.Tensor:
-    """Reshape a fixed target pose sequence into a smooth, single-direction "arc" detour through
-    its middle portion, converging back to the exact original poses at the very start and for the
-    last `freeze_frac` fraction of frames (the "tail" nearest the subtask's interaction/contact
-    point stays byte-identical to the source demo).
-
-    Design (see docs/接触锚定扰动增广_设计记录.md and CLAUDE.md "主线二·扩展到全部subtask轨迹
-    多样化"): a single random direction is sampled once (not per-point) and scaled by a `sin`
-    envelope across `num_points` interior control points spread through the free (non-frozen)
-    zone - envelope is exactly 0 at both zone boundaries and peaks at the zone's midpoint - so the
-    whole detour bows out one consistent way (an arc), not an independently-noised zigzag, and
-    joins the untouched start/tail with zero discontinuity. Every frame in the free zone (not just
-    the `num_points` control points) is re-derived via piecewise-linear interpolation of this
-    offset, so the entire reshaped segment is smooth by construction, not just the sampled points.
-
-    Unlike the reverted PERTURB_ALL_SUBTASKS_STD (see git history: commits 5a813b3eb/5f219afa7,
-    reverted by d9381bd46/a4ebcab7e), this never touches the live simulation - it only reshapes
-    the *target* pose sequence that gets executed via the normal, already-smooth interpolation +
-    physics-stepped control loop, so a held object is carried along exactly like any other
-    real robot motion. Only the translation component is perturbed; orientation is untouched.
-
-    Args:
-        poses: (T, 4, 4) fixed target pose sequence for one subtask (object-transformed source
-            demo segment - unchanged regardless of this perturbation).
-        num_points: number of interior control points in the free zone. 0 disables perturbation.
-        magnitude: peak offset magnitude in meters, reached at the free zone's midpoint.
-        freeze_frac: fraction of the trajectory (from the end) left completely untouched.
-
-    Returns:
-        (T, 4, 4) pose sequence, same shape as input.
-    """
-    total_len = poses.shape[0]
-    free_len = int(round(total_len * (1.0 - freeze_frac)))
-    if num_points < 1 or free_len < 2:
-        return poses
-
-    device = poses.device
-    direction = torch.randn(3, device=device)
-    direction = direction / (direction.norm() + 1e-8)
-
-    # Control points: index 0 and (free_len - 1) are the fixed zone boundaries (envelope 0);
-    # `num_points` interior control points get the sin-enveloped offset.
-    control_frame_idx = [round(i * (free_len - 1) / (num_points + 1)) for i in range(num_points + 2)]
-    control_offset = []
-    for j, idx in enumerate(control_frame_idx):
-        if j == 0 or j == len(control_frame_idx) - 1:
-            control_offset.append(torch.zeros(3, device=device))
-        else:
-            u = idx / (free_len - 1)
-            envelope = math.sin(math.pi * u)
-            control_offset.append(direction * magnitude * envelope)
-
-    new_poses = poses.clone()
-    for seg in range(len(control_frame_idx) - 1):
-        i0, i1 = control_frame_idx[seg], control_frame_idx[seg + 1]
-        if i1 <= i0:
-            continue
-        for i in range(i0, i1 + 1):
-            t = (i - i0) / (i1 - i0)
-            offset = control_offset[seg] * (1 - t) + control_offset[seg + 1] * t
-            new_poses[i, :3, 3] = poses[i, :3, 3] + offset
-
-    return new_poses
 
 from .datagen_info_pool import DataGenInfoPool
 
@@ -590,18 +523,6 @@ class DataGenerator:
 
                     # Skip transformation if no reference object is provided
                     transformed_eef_poses = src_eef_poses
-
-        # Opt-in: reshape this subtask's fixed target trajectory into a smooth "arc" detour
-        # through its middle, converging back to the exact original for the tail nearest the
-        # interaction point. See _apply_arc_perturbation's docstring for the design rationale.
-        # Unset by default -> transformed_eef_poses is untouched, byte-for-byte prior behavior.
-        arc_num_points = int(os.environ.get("PERTURB_ARC_NUM_POINTS", "0"))
-        if arc_num_points > 0:
-            arc_std = float(os.environ.get("PERTURB_ARC_STD", "0.0"))
-            arc_freeze_frac = float(os.environ.get("PERTURB_ARC_FREEZE_FRAC", "0.3"))
-            transformed_eef_poses = _apply_arc_perturbation(
-                transformed_eef_poses, num_points=arc_num_points, magnitude=arc_std, freeze_frac=arc_freeze_frac
-            )
 
         # Construct trajectory for the transformed segment.
         transformed_seq = WaypointSequence.from_poses(
