@@ -75,7 +75,9 @@ simulation_app = app_launcher.app
 
 import json
 import math
+import os
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -239,9 +241,7 @@ def main():
     print(f"Mean steps:      success={summary['mean_steps_success']}, failure={summary['mean_steps_failure']}")
     print(f"Mean wall/roll:  {summary['mean_wall_seconds']}s (inference {summary['infer_fraction']:.1%} of it)")
     print(f"Total wall:      {summary['total_wall_seconds']}s")
-    print("=" * 70 + "\n")
-
-    env.close()
+    print("=" * 70 + "\n", flush=True)
 
 
 def build_summary(records: list[dict]) -> dict:
@@ -285,5 +285,15 @@ def build_summary(records: list[dict]) -> dict:
 if __name__ == "__main__":
     # run the main function
     main()
-    # close sim app
-    simulation_app.close()
+
+    # Hard-exit instead of env.close() + simulation_app.close(). Both were observed to hang
+    # indefinitely after the final trial: a completed 3-rollout run sat spinning CPU for 40+ min
+    # past printing its results, emitted none of the usual shutdown chatter, and only died to
+    # SIGKILL -- while still holding GPU memory on all four cards. That matters beyond tidiness:
+    # a driver script that runs this in the foreground to evaluate several checkpoints in sequence
+    # would block forever on the first one. Everything worth keeping (the summary, the per-rollout
+    # records) is already flushed to stdout and to --results_file by this point, so there is
+    # nothing left for a graceful teardown to save.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
