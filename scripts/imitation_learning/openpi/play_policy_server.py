@@ -43,6 +43,19 @@ parser.add_argument("--horizon", type=int, default=400, help="Step horizon of ea
 parser.add_argument("--num_rollouts", type=int, default=10, help="Number of rollouts.")
 parser.add_argument("--seed", type=int, default=101, help="Random seed.")
 parser.add_argument(
+    "--reset_joint_std",
+    type=float,
+    default=0.0,
+    help=(
+        "Std (rad) of the Gaussian reset noise on the 7 arm joints. Defaults to 0.0 to match how the"
+        " pi0.5 training data was actually generated: measuring frame 0 of the delivered demos shows"
+        " joint_pos_rel is exactly 0 across every demo in both groups, i.e. generation ran with"
+        " PERTURB_STD=0. The stock env cfg instead hardcodes 0.02, which would put eval slightly"
+        " out of distribution (~1.7cm of end-effector displacement) relative to training. Raising"
+        " this is also the natural initial-pose-deviation axis for a later robustness sweep."
+    ),
+)
+parser.add_argument(
     "--results_file",
     type=str,
     default=None,
@@ -168,6 +181,12 @@ def main():
     # Disable recorder -- this is an eval rollout, not a demo-generation run.
     env_cfg.recorders = None
 
+    # Match the reset joint noise to whatever the caller asked for. The cube randomization needs no
+    # such handling: eval's FrankaCubeStackVisuomotorEnvCfg is the direct parent of the
+    # ...VisuomotorPerturbedMimicEnvCfg used to generate the training data, and neither subclass
+    # touches randomize_cube_positions, so both draw cube poses from the identical config.
+    env_cfg.events.randomize_franka_joint_state.params["std"] = args_cli.reset_joint_std
+
     # Extract success checking function so we can check it every step without it auto-terminating.
     success_term = env_cfg.terminations.success
     env_cfg.terminations.success = None
@@ -243,6 +262,7 @@ def build_summary(records: list[dict]) -> dict:
     return {
         "task": args_cli.task,
         "seed": args_cli.seed,
+        "reset_joint_std": args_cli.reset_joint_std,
         "horizon": args_cli.horizon,
         "prompt": args_cli.prompt,
         "policy_port": args_cli.policy_port,
