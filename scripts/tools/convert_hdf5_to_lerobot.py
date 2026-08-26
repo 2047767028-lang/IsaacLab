@@ -21,6 +21,18 @@ Example:
         --repo-name pi05_training_data_v1_baseline \
         --task "stack the cubes" \
         --max-episodes 5
+
+`--src` may be repeated to build one dataset out of several sources, with
+`--episodes-per-src` fixing how many episodes each contributes. That combination answers a
+different question than either source alone: comparing "N clean demos" against "N/2 clean +
+N/2 augmented" isolates whether the augmented demos are individually worth as much as clean
+ones, without the dataset-size confound that a simple union would introduce. Episodes are
+sampled with `--sample-seed` (not taken from the front, in case generation order correlates
+with anything) and interleaved round-robin across sources:
+
+    python scripts/tools/convert_hdf5_to_lerobot.py \
+        --src .../baseline/generated.hdf5 --src .../arc_1p2cm/generated.hdf5 \
+        --episodes-per-src 190 --repo-name pi05_lerobot_mixed_half
 """
 
 import argparse
@@ -47,14 +59,49 @@ def build_state(obs: h5py.Group, t: int) -> np.ndarray:
     ).astype(np.float32)
 
 
+def plan_episodes(srcs: list[str], episodes_per_src: int | None, max_episodes: int | None, seed: int):
+    """Decide which (source, demo_key) pairs go into the dataset, and in what order.
+
+    Returns the interleaved plan plus the per-source selections, so the caller can report exactly
+    what went in -- with several sources the composition is the whole point of the run.
+    """
+    picked = []
+    for src in srcs:
+        with h5py.File(src, "r") as f:
+            keys = sorted(f["data"].keys(), key=lambda k: int(k.split("_")[1]))
+            keys = [k for k in keys if bool(f["data"][k].attrs.get("success", True))]
+        n = episodes_per_src if episodes_per_src is not None else (max_episodes or len(keys))
+        if n > len(keys):
+            raise SystemExit(f"{src} only has {len(keys)} successful demos, cannot take {n}")
+        if n < len(keys):
+            rng = np.random.default_rng(seed)
+            keys = [keys[i] for i in sorted(rng.choice(len(keys), size=n, replace=False))]
+        picked.append((src, keys))
+
+    plan = []
+    for i in range(max(len(k) for _, k in picked)):
+        for src, keys in picked:
+            if i < len(keys):
+                plan.append((src, keys[i]))
+    return plan, picked
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--src", required=True, help="path to generated.hdf5 (successes only)")
+    parser.add_argument("--src", required=True, action="append",
+                        help="path to generated.hdf5 (successes only); repeat to mix sources")
     parser.add_argument("--repo-name", required=True, help="output dataset name under HF_LEROBOT_HOME")
     parser.add_argument("--task", default="stack the cubes", help="fixed language instruction for all episodes")
     parser.add_argument("--max-episodes", type=int, default=None, help="limit number of demos (for smoke tests)")
+    parser.add_argument("--episodes-per-src", type=int, default=None,
+                        help="how many episodes to take from EACH --src (required when mixing)")
+    parser.add_argument("--sample-seed", type=int, default=0,
+                        help="seed for choosing which episodes to take when taking a subset")
     parser.add_argument("--robot-type", default="franka")
     args = parser.parse_args()
+
+    if len(args.src) > 1 and args.episodes_per_src is None:
+        raise SystemExit("--episodes-per-src is required when passing more than one --src")
 
     output_path = HF_LEROBOT_HOME / args.repo_name
     if output_path.exists():
@@ -90,17 +137,17 @@ def main():
         image_writer_processes=4,
     )
 
-    with h5py.File(args.src, "r") as f:
-        demo_keys = list(f["data"].keys())
-        if args.max_episodes is not None:
-            demo_keys = demo_keys[: args.max_episodes]
+    plan, picked = plan_episodes(args.src, args.episodes_per_src, args.max_episodes, args.sample_seed)
+    for src, keys in picked:
+        print(f"SOURCE {src}: taking {len(keys)} episodes, first few = {keys[:5]}", flush=True)
+    print(f"TOTAL {len(plan)} episodes, interleaved across {len(picked)} source(s)", flush=True)
 
-        for demo_idx, demo_key in enumerate(demo_keys):
-            if demo_idx % 20 == 0:
-                print(f"PROGRESS: {demo_idx}/{len(demo_keys)} episodes", flush=True)
-            demo = f["data"][demo_key]
-            if not bool(demo.attrs.get("success", True)):
-                continue
+    handles = {src: h5py.File(src, "r") for src in args.src}
+    try:
+        for idx, (src, demo_key) in enumerate(plan):
+            if idx % 20 == 0:
+                print(f"PROGRESS: {idx}/{len(plan)} episodes", flush=True)
+            demo = handles[src]["data"][demo_key]
 
             obs = demo["obs"]
             actions = demo["actions"][:]
@@ -119,6 +166,9 @@ def main():
                     task=args.task,
                 )
             dataset.save_episode()
+    finally:
+        for h in handles.values():
+            h.close()
 
     print(f"Done. Dataset written to: {output_path}")
 
