@@ -44,6 +44,11 @@ def main() -> None:
     config_name = os.environ.get("PI05_SMOKE_CONFIG_NAME", "pi05_mimicgen_baseline_smoke")
     exp_name = os.environ.get("PI05_SMOKE_EXP_NAME", f"lora_{fsdp_devices}gpu_b{batch_size}_{num_train_steps}")
 
+    # Re-running a condition under a different seed is what turns a single success-rate number into
+    # an interpretable one: without knowing how much two identically-configured runs differ, a gap
+    # between two *datasets* cannot be told apart from ordinary run-to-run variation.
+    train_seed = int(os.environ.get("PI05_TRAIN_SEED", "42"))
+
     warmup_steps = int(os.environ.get("PI05_WARMUP_STEPS", "1000"))
     peak_lr = float(os.environ.get("PI05_PEAK_LR", "2.5e-5"))
     decay_lr = float(os.environ.get("PI05_DECAY_LR", "2.5e-6"))
@@ -78,6 +83,7 @@ def main() -> None:
         base,
         name=config_name,
         exp_name=exp_name,
+        seed=train_seed,
         model=model_cfg,
         data=config_lib.LeRobotLiberoDataConfig(
             repo_id=repo_id,
@@ -108,7 +114,8 @@ def main() -> None:
     print(
         f"CUDA_VISIBLE_DEVICES={cuda_visible_devices} fsdp_devices={fsdp_devices} "
         f"repo_id={repo_id} config_name={config_name} exp_name={exp_name}\n"
-        f"batch_size={batch_size} num_train_steps={num_train_steps} save_interval={save_interval}\n"
+        f"batch_size={batch_size} num_train_steps={num_train_steps} save_interval={save_interval} "
+        f"train_seed={train_seed}\n"
         f"lr: warmup={warmup_steps} peak={peak_lr:g} decay_steps={decay_steps} floor={decay_lr:g}",
         flush=True,
     )
