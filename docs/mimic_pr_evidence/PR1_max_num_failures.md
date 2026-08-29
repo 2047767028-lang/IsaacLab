@@ -46,6 +46,12 @@ Wiring the field up exactly as written would abort the primary documented workfl
 
 If maintainers would rather the shipped configs keep an active cap, that is a one-line change per config and I am happy to make it — it just needs a value that suits large runs.
 
+### Tests
+
+`source/isaaclab_mimic/test/test_generation_failure_cap.py` drives `env_loop` with a fake environment whose `step()` consumes scripted attempt outcomes and refills the action queue, so the loop's own termination logic runs unmodified with no simulator or dataset behind it; a step-count fuse turns an unbounded loop into a failed assertion. Six cases: the cap stops a run that never succeeds; `None` keeps the guarantee unbounded as before; enough successes still end the run first; a cap reached short of the target ends it; attempt-based termination with the guarantee off is untouched (×2).
+
+Against the unpatched loop the two cap-dependent cases fail (`'fuse' == 'exited'`, and `(3, 4) == (2, 4)` — the loop overran the cap and collected an extra success) and the four asserting unchanged behaviour pass.
+
 ## Type of change
 
 - Bug fix (non-breaking change which fixes an issue)
@@ -56,6 +62,6 @@ If maintainers would rather the shipped configs keep an active cap, that is a on
 - [ ] I have run the `pre-commit` checks with `./isaaclab.sh --format`
 - [x] I have made corresponding changes to the documentation
 - [x] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
+- [x] I have added tests that prove my fix is effective or that my feature works
 - [x] I have added a changelog fragment under `source/<pkg>/changelog.d/` for every touched package
 - [ ] I have added my name to the `CONTRIBUTORS.md` or my name already exists there

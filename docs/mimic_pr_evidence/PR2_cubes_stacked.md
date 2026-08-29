@@ -57,6 +57,15 @@ Measured end to end on the stock `Isaac-Stack-Cube-Franka-IK-Rel-Mimic-v0`, gene
 | before | 100 | **9 (9.0%)** | 279 | 35.8% |
 | after | 100 | **2 (2.0%)** | 300 | 33.3% |
 
+### Scope and caveats
+
+- All six call sites of `cubes_stacked` are `DoneTerm` success terminations. The Mimic subtask-boundary signals use `object_stacked` (observations side), so annotation boundaries are unaffected. `object_stacked` has the same one-sided geometry and can presumably fire in flight too; it is consumed edge-triggered by annotation and is left out of scope here.
+- The 0.05 m/s default was measured on the stack task's default backend (PhysX, `stack_env_cfg.py: default = isaacsim_physx`). The Newton solver config offered alongside it, and the SO-101 stack task which shares this termination, were not measured separately; if either shows a higher resting jitter the threshold should be raised for it rather than the check disabled.
+
+### Tests
+
+`source/isaaclab_tasks/test/contrib/stack/test_cubes_stacked_at_rest.py` — ten sim-free cases with hand-built scene objects: a resting stack passes; a cube passing through the stacked configuration mid-fall does not (the defect); `max_lin_vel=None` restores the position-only check; every cube in the checked set is subject to the test; the 0.030 / 0.049 / 0.051 m/s edges; the two-cube variant ignores the third scene object; the Franka variants' remapped cube roles are honoured; batched verdicts stay independent; the gripper check still gates.
+
 ### A note on the gripper tolerance, which looks like the opposite bug
 
 `atol`/`rtol` of `1e-4` against `gripper_open_val` work out to 0.104 mm on a 40 mm jaw travel, and 11% of failed attempts had reached the stacked geometry but missed that tolerance — which reads like a false-negative worth relaxing. It is not. Every one of those 76 episodes is a drop: none has its stack intact at the final frame, and the top cube has moved a median 10.8 cm by then. Relaxing the tolerance to 3 mm would have admitted 54 of them into the dataset. The tight tolerance is masking this defect by accident; it is not causing one, and it is left alone here.
@@ -73,6 +82,6 @@ This lowers reported success rates for the stack tasks slightly, in both Mimic g
 - [ ] I have run the `pre-commit` checks with `./isaaclab.sh --format`
 - [x] I have made corresponding changes to the documentation
 - [x] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
+- [x] I have added tests that prove my fix is effective or that my feature works
 - [x] I have added a changelog fragment under `source/<pkg>/changelog.d/` for every touched package
 - [ ] I have added my name to the `CONTRIBUTORS.md` or my name already exists there

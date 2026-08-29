@@ -132,3 +132,82 @@ a defect of its own, and it is left untouched.
 | `angular_check.py` | why angular velocity was not added |
 | `validate_mimic_bugs.py`, `run_all.sh` | the closed-loop harness for runs A–D |
 | `analyze_runs.py` | defect rate in a freshly generated dataset |
+
+## Independent review pass (second model, 2026-08-29)
+
+Everything above was produced in one session. This section is a second pass that started from the
+committed PR branches and re-derived each claim, looking for the ways the first pass could have
+fooled itself.
+
+### What the first pass had not done
+
+**The PR branches' own files had never been executed.** The closed-loop runs A–D validated the
+*logic* of both fixes, but they did so by injecting equivalent code into the installed 2.3.2 tree.
+The develop-based `terminations.py` and `generation.py` that a reviewer would actually read were
+only ever `py_compile`d.
+
+Closed by `scripts/exec_pr_code.py`: it materialises `git show <branch>:<path>` for both the PR
+branch and untouched `origin/develop`, loads each by path under the Omniverse app, and drives them
+with mock scene objects / a scripted fake environment. **23/23 checks pass** (`exec_pr_code.log`):
+
+| what | stock develop | PR branch |
+|---|---|---|
+| resting three-cube stack | True | True |
+| cube_3 falling through the stack at 0.10 m/s | **True (defect)** | False |
+| same, `max_lin_vel=None` | — | True (opt-out) |
+| cube_1 / cube_2 moving instead | — | False / False |
+| 0.030 / 0.049 / 0.051 m/s | — | True / True / False |
+| `cube_3_cfg=None`, third object moving | — | True (not consulted) |
+| Franka-style remap `(cube_2, cube_3, None)`, top falling | — | False |
+| batch of 4 with envs 1 and 3 moving | **[T,T,T,T]** | [T,F,T,F] |
+| closed gripper on a resting stack | — | False |
+| `env_loop`, cap=5, every attempt fails | **still running at 41 steps** | exits at 5 failures |
+| `env_loop`, cap=None, every attempt fails | still running at 41 | still running at 41 (unchanged) |
+| `env_loop`, 3 successes arrive before cap | — | exits on successes |
+| `env_loop`, `generation_guarantee=False` | — | exits on 10 attempts (unchanged) |
+
+### Discrepancy between the validation harness and the PR, checked and closed
+
+The harness's at-rest wrapper checked `cube_2` and `cube_3`; the PR's default success term checks
+`cube_1`, `cube_2` and `cube_3`. If the bottom cube jittered more than the others the PR would be
+stricter than what run D validated. Measured on run C's recorded `root_velocity` at the qualifying
+frame: `cube_1` intact max **0.0177 m/s** (lower than the other two), and the PR's three-cube
+criterion at 0.05 keeps **91/91** intact and **2/9** broken — the same numbers as the harness.
+
+### Things that would have changed the PR, checked
+
+- **All six `cubes_stacked` call sites are `DoneTerm` success terminations.** The Mimic subtask
+  boundary signals use a different function (`object_stacked`, observations side), so the at-rest
+  requirement does not move annotation boundaries. `object_stacked` has the same one-sided geometry
+  and could fire in flight too; it is consumed edge-triggered by annotation and is left out of scope.
+- **`root_lin_vel_w` returns `ProxyArray` on develop and `ProxyArray.torch` exists** (`utils/warp/proxy_array.py:122`), matching the `root_pos_w.torch` already used in the same function.
+- **The stack task's default physics backend on develop is PhysX** (`stack_env_cfg.py: default = isaacsim_physx`), the backend the 0.05 threshold was measured on. A Newton solver is offered as an alternative config; its resting jitter was not measured. Flagged in the PR body.
+- **`int | None = None` on a configclass field** has precedent in the same package (`direct_rl_env_cfg.py: seed: int | None = None`).
+- **The `contrib/stack/` path does not exist on `release/3.0.0-beta2`** (96 insertions = the whole file on develop), so `develop` is the only possible base; the two earlier XR PRs from this fork also target `develop` (`gh pr view 7380`).
+- **The existing generation test** asserts only `"successes/attempts. Exiting"` in the output with `generation_num_trials=1`; neither change alters that path.
+- **SO-101 stack task** uses `cubes_stacked` with the default `max_lin_vel`. It shares the cube assets with the Franka task; its jitter was not measured separately. Flagged.
+
+### Tests added to the PR branches
+
+- `source/isaaclab_tasks/test/contrib/stack/test_cubes_stacked_at_rest.py` (10 cases)
+- `source/isaaclab_mimic/test/test_generation_failure_cap.py` (6 cases)
+
+Both follow the repository convention (`AppLauncher(headless=True)` at the top, no simulator scene).
+**They cannot be run natively on this machine**: the editable 2.3.2 install registers a
+`sys.meta_path` finder that wins over `PYTHONPATH`, so `isaaclab_tasks.contrib` resolves to the
+2.3.2 package (no `contrib/`) and `isaaclab_mimic.datagen.generation` to the 2.3.2 file. Their
+function bodies are what `exec_pr_code.py` executed; the import lines themselves are exercised only
+by upstream CI.
+
+**Negative control** (`pytest_test_generation_failure_cap.log`): run against the unpatched 2.3.2
+`env_loop`, the mimic test gives **2 failed, 4 passed** — exactly the two cap-dependent cases fail
+(`'fuse' == 'exited'`; `(3, 4) == (2, 4)`, the unpatched loop overran the cap and collected a third
+success), the four asserting unchanged behaviour pass. The test detects the defect it is written for.
+
+### Not done
+
+- The lab server (Isaac Lab 3.0.0) was considered for running the PR code end to end, but the
+  `contrib/stack` layout does not exist there either, and repeated SSH attempts were refused mid-way
+  (the host runs fail2ban) — dropped rather than hammered.
+- `./isaaclab.sh --format` (the full pre-commit run) was not run; `ruff check` and `ruff format
+  --check` at the pinned version (0.14.10) pass on every touched file on both branches.
