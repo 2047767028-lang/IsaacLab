@@ -211,3 +211,15 @@ success), the four asserting unchanged behaviour pass. The test detects the defe
   (the host runs fail2ban) — dropped rather than hammered.
 - `./isaaclab.sh --format` (the full pre-commit run) was not run; `ruff check` and `ruff format
   --check` at the pinned version (0.14.10) pass on every touched file on both branches.
+
+## Submitted (2026-08-29)
+
+| PR | branch | base | scope |
+|---|---|---|---|
+| [isaac-sim/IsaacLab#7433](https://github.com/isaac-sim/IsaacLab/pull/7433) | `fix/mimic-max-num-failures` | `develop` | 22 files, 4 commits |
+| [isaac-sim/IsaacLab#7434](https://github.com/isaac-sim/IsaacLab/pull/7434) | `fix/cubes-stacked-at-rest` | `develop` | 4 files, 6 commits |
+
+Both carry the contributor line (`* Kai Pei` inserted alphabetically into the project-wide
+`CONTRIBUTORS.md`; git resolves the identical insertion on both sides without conflict when the
+second one merges). Docker/GPU CI on this repository is on demand: a maintainer or the author has
+to comment `run-ci` on each PR for the new tests to execute.
