@@ -52,6 +52,85 @@ import isaaclab_tasks  # noqa: F401
 
 DWELL = int(os.environ.get("DWELL", "0"))
 SCALE = float(os.environ.get("SCALE", "0"))
+SUBTASKS = os.environ.get("ARC_SUBTASKS", "")
+"""Comma-separated subtask indices to perturb, e.g. "0". Empty means all of them, as today."""
+
+
+def gate_arc_to_subtasks(allowed: set[int]):
+    """Apply the arc only on the listed subtasks, leaving the rest exactly as the source demo.
+
+    The residual at the contact phase accumulates across subtasks like a random walk -- measured
+    0.63, 0.96, 1.01, 1.28 cm at the four contact events for a 3.0 cm arc -- so perturbing k of the
+    four should scale it by sqrt(k/4). Perturbing one subtask halves the damage while keeping full
+    amplitude where it is applied.
+
+    `_apply_arc_perturbation` does not receive the subtask index, so the enclosing method is wrapped
+    to record it first. That method is synchronous, so a module-level slot is safe even though
+    generation runs several environments concurrently.
+
+    The original is called either way and its result discarded when gated out, so the random draws
+    it makes are consumed identically and the scene sequence stays comparable across runs.
+    """
+    import isaaclab_mimic.datagen.data_generator as dg
+
+    current = {"ind": None}
+    orig_method = dg.DataGenerator.generate_eef_subtask_trajectory
+    orig_arc = dg._apply_arc_perturbation
+
+    def wrapped_method(self, env_id, eef_name, subtask_ind, *a, **kw):
+        current["ind"] = subtask_ind
+        return orig_method(self, env_id, eef_name, subtask_ind, *a, **kw)
+
+    def gated_arc(poses, magnitude, freeze_frac, peak_frac_range=(0.5, 0.5)):
+        perturbed = orig_arc(poses, magnitude, freeze_frac, peak_frac_range)
+        return perturbed if current["ind"] in allowed else poses
+
+    dg.DataGenerator.generate_eef_subtask_trajectory = wrapped_method
+    dg._apply_arc_perturbation = gated_arc
+
+
+def add_tail_dwell(n: int):
+    """Hold the target still for n frames at the END of each subtask, just before contact.
+
+    num_fixed_steps puts its dwell at the START of each subtask, which lands around the grasps and
+    never before a placement -- and placement is 66% of the failures. Measured at 3.0 cm: a dwell of
+    20 took grasp failures from 16 to 11 and from 31 to 23 while leaving placement failures at 154
+    against 155. Raising the controller gain instead fixed grasping harder (16 to 8, 31 to 8) and
+    wrecked placement (154 to 216), because a faster arm flicks the cube as it lets go.
+
+    So the dwell wanted is at the other end of the subtask. It is not exposed by any config, but the
+    perturbation hook returns the subtask's pose sequence, so repeating its final pose appends the
+    dwell there. The gripper-action sequence has to grow to match, which is what the from_poses
+    wrapper does.
+    """
+    import isaaclab_mimic.datagen.data_generator as dg
+    from isaaclab_mimic.datagen.waypoint import WaypointSequence
+
+    orig_arc = dg._apply_arc_perturbation
+    orig_from_poses = WaypointSequence.from_poses.__func__
+
+    def arc_then_dwell(poses, magnitude, freeze_frac, peak_frac_range=(0.5, 0.5)):
+        out = orig_arc(poses, magnitude, freeze_frac, peak_frac_range)
+        return torch.cat([out, out[-1:].expand(n, -1, -1)], dim=0)
+
+    def padded_from_poses(cls, poses, gripper_actions, action_noise):
+        if len(gripper_actions) < len(poses):
+            pad = len(poses) - len(gripper_actions)
+            gripper_actions = torch.cat([gripper_actions, gripper_actions[-1:].expand(pad, -1)], dim=0)
+            # The appended frames must be noise-free or the dwell does nothing: action_noise is 0.03,
+            # i.e. 3 cm per axis, so an arm holding position is shoved around faster than it can
+            # settle. The shipped fixed segment gets 0 noise for exactly this reason
+            # (apply_noise_during_interpolation is False), and the first version of this patch
+            # inherited the subtask's noise instead -- which is why it produced 0.9% of frames within
+            # a centimetre of target against the shipped dwell's 2.8%, and no effect on success.
+            if not torch.is_tensor(action_noise):
+                action_noise = torch.full((len(poses),), float(action_noise))
+            action_noise = action_noise.clone()
+            action_noise[-pad:] = 0.0
+        return orig_from_poses(cls, poses, gripper_actions, action_noise)
+
+    dg._apply_arc_perturbation = arc_then_dwell
+    WaypointSequence.from_poses = classmethod(padded_from_poses)
 
 
 def main():
@@ -76,6 +155,14 @@ def main():
         old = env_cfg.actions.arm_action.scale
         env_cfg.actions.arm_action.scale = SCALE
         print(f"[fix] arm_action.scale {old} -> {SCALE}")
+    if SUBTASKS:
+        allowed = {int(x) for x in SUBTASKS.split(",")}
+        gate_arc_to_subtasks(allowed)
+        print(f"[fix] arc applied only on subtasks {sorted(allowed)}")
+    tail = int(os.environ.get("TAIL_DWELL", "0"))
+    if tail > 0:
+        add_tail_dwell(tail)
+        print(f"[fix] {tail}-frame dwell appended at the end of every subtask")
 
     print(f"[cfg] arc_std={os.environ.get('PERTURB_ARC_STD')} attempts={args_cli.attempts}"
           f" guarantee={env_cfg.datagen_config.generation_guarantee} seed={env_cfg.datagen_config.seed}")
