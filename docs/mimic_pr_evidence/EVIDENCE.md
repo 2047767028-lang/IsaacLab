@@ -223,3 +223,54 @@ Both carry the contributor line (`* Kai Pei` inserted alphabetically into the pr
 `CONTRIBUTORS.md`; git resolves the identical insertion on both sides without conflict when the
 second one merges). Docker/GPU CI on this repository is on demand: a maintainer or the author has
 to comment `run-ci` on each PR for the new tests to execute.
+
+## Review round 1 (2026-08-30)
+
+Both PRs drew an automated review (Greptile + `isaaclab-review-bot`); #7434 also drew a human
+maintainer. Three findings, two accepted and one rejected.
+
+**Accepted, #7433 — the failure cap contradicted its own docstring.** The field's docstring said it
+applied only with `generation_guarantee`, but the loop check ran unconditionally, so a fixed-attempt
+run (`generation_guarantee=False`) with a cap below `generation_num_trials` would have ended before
+delivering its attempts. Gated on the guarantee in `3bcd74c`, because the guarantee is also the only
+mode that needs the cap: without it, `check_val >= generation_num_trials` already bounds the run. The
+reviewer further noted the attempt-mode test used caps of `None`/`100` against 10 attempts and so
+never exercised a cap that could fire; a cap of 3 was added.
+
+**Accepted, #7434 — unit notation.** `Speed, in m/s` → `Speed [m/s]`, matching the convention used
+elsewhere in the public API docs. `e005587`.
+
+**Rejected, #7433 — the SPDX header finding is a false positive.** `.pre-commit-config.yaml` runs
+`insert-license` twice and splits on path: everything gets `.github/LICENSE_HEADER.txt`
+(BSD-3-Clause) *except* `source/isaaclab_mimic/` and `scripts/imitation_learning/isaaclab_mimic/`,
+which get `.github/LICENSE_HEADER_MIMIC.txt` (Apache-2.0, `Copyright (c) 2024-<year>`). The new test
+is at `source/isaaclab_mimic/test/`, so Apache-2.0 is correct and `pre-commit` would rewrite a BSD
+header back. Replied in-thread with the config rather than changing the file.
+
+**Open, #7434 — the maintainer asked to remove the test file.** Replied asking which part they object
+to: the test is pure tensor logic but carries the `AppLauncher` preamble, which pulls up Kit
+needlessly, whereas `test_so101_pose_ik.py` in the same directory is genuinely sim-free. Offered to
+either drop it or strip the preamble; awaiting their call.
+
+### Re-validation after the changes
+
+`exec_pr_code.py`, extended with the gating cases, run against the committed branch files:
+**27/27 pass** (was 23/23). The two that matter:
+
+| case | result |
+|---|---|
+| `generation_guarantee=False`, cap 3 vs 10 requested attempts | runs all 10 (the finding, fixed) |
+| `generation_guarantee=True`, cap 3 | still stops at 3 failures (the fix still does its job) |
+
+Both controls on the test file itself (`run_pytest_both.sh`, `pytest_positive2.py`):
+
+| control | generation.py used | result |
+|---|---|---|
+| positive | the PR branch's | **7 passed** |
+| negative | the installed 2.3.2 | **2 failed, 5 passed** — the two cap-dependent cases |
+
+The positive control has to strip the four-line `AppLauncher` preamble: the test module launches Kit
+at import, and a second launch in a process that already has one does not return, so the injection
+cannot happen in a conftest. The stripper asserts the preamble matches verbatim and prints the diff
+(four lines, nothing else). In CI each file gets its own process and the preamble is correct as
+committed.
