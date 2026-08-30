@@ -115,3 +115,74 @@ linearly and without bound, so there is nothing to plateau against.
 | `paired_contact.py` | frozen-tail end-effector deviation and paired placement error |
 | `nullspace_check.py` | the residual is a settled joint-configuration difference, not decaying lag |
 | `arc_sweep_diagnosis.py` | placement accuracy among successes, failure-mode split, in-flight loophole |
+
+---
+
+# Where the error comes from
+
+## It is not open-loop replay
+
+`FrankaCubeStackIKRelMimicEnv.target_eef_pose_to_action` computes
+
+```python
+curr_pose = self.get_robot_eef_pose(eef_name, env_ids=[env_id])[0]
+delta_position = target_pos - curr_pos
+```
+
+so the action is the gap from the *achieved* pose to the target, recomputed every step. Errors are
+not replayed forward; the loop is closed in Cartesian space and in principle self-correcting. That
+makes the persistence of the residual the thing that needs explaining, not its creation.
+
+## The arm never tracks the target closely
+
+From `loop_gain.py` on the reference run (14367 steps):
+
+| quantity | median |
+|---|---|
+| position error carried by the action | 7.40 cm |
+| commanded after `scale=0.5` | 3.70 cm |
+| **achieved displacement per step** | **0.735 cm** |
+
+The action carries the injected `action_noise=0.03` (σ = 3 cm per axis, ≈5.2 cm over three), so the
+true tracking lag is nearer `sqrt(7.40² − 5.20²) ≈ 5.3 cm`; the arm achieving 0.735 cm per step
+against that lag implies an effective gain of about 0.14 per step, and it executes roughly **20% of
+what it is commanded**. A 3.7 cm step at 20 Hz would be 74 cm/s at the end effector, so the limit is
+the arm's own dynamics, not the controller's arithmetic.
+
+**The arm is permanently about 5 cm behind its target.** That is the regime the whole pipeline runs
+in, and it is the fact the contact-anchoring design implicitly assumes away.
+
+## The residual is an equilibrium difference, not a transient
+
+Inside the frozen tail the two paired runs are commanded identically, so a self-correcting loop
+should collapse any difference between them. It does not. From the seed-1 3.0 cm pairing, the
+difference goes 1.373 cm at frame −20 to 1.187 cm at frame −1:
+
+- decay of **0.76% per frame**, half-life **90 frames**
+- against subtasks of roughly 60 frames, of which the frozen tail is about 18
+
+`residual_mechanism.py` shows what kind of difference it is. At every amplitude the residual puts
+37–41% of its squared length along the direction of travel, against 33% for an isotropic direction —
+so it is **not** trailing behind a moving target, which would put it almost entirely along the
+motion. Its direction is inherited from the arc's own `torch.randn(3)` direction, which is isotropic
+by construction. The correlation between the end-effector residual and the joint residual falls from
+0.34 at 1.0 cm to 0.00 at 3.0 cm, so the residual is not a simple function of how far the joints
+moved either.
+
+Taken with the joint configuration sitting 0.105 rad apart and not decaying, the reading is that the
+two runs settle into **different equilibria** rather than one converging toward the other:
+resolved-rate damped-least-squares IK integrates joint velocities, and a closed path in Cartesian
+space does not close in joint space, so the detour leaves a permanent configuration change; a
+permanently lagging arm lags by an amount that depends on its configuration; and the difference
+between two steady-state lags is not a transient any amount of frozen tail will remove.
+
+That last step is inference rather than measurement. What is measured is that the difference decays
+at 0.76% per frame, which rules out "the tail is simply too short".
+
+## Guard against the obvious artefact
+
+Comparing by index from the end would manufacture the whole effect if paired episodes had different
+lengths — the arm moves 0.405 cm per frame, so three frames of misalignment is 1.2 cm.
+`alignment_guard.py`: **100% of paired episodes have identical length**, and re-testing over every
+time shift in [−5, +5] frames returns the same deviation with a median best shift of 0. The residual
+is spatial, not temporal, and at 3.0 cm it is 3.4× a single frame of motion.
