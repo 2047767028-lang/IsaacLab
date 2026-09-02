@@ -57,6 +57,15 @@ def main() -> None:
     # at a flat high learning rate and never settles.
     decay_steps = int(os.environ.get("PI05_DECAY_STEPS", str(num_train_steps)))
 
+    # Resume an interrupted run from the latest checkpoint in its directory instead of wiping it.
+    # openpi refuses resume+overwrite together, so both are tied to this one switch. What a resume
+    # restores: params, optimizer state and the step counter, so the cosine schedule continues from
+    # where it stopped. What it does NOT restore: the data iterator (openpi's `restore_state`
+    # discards the data loader), so the resumed run re-draws batches from the start of the shuffle
+    # stream. That is run-to-run variation of the same kind as changing the training seed, not a
+    # change of hyperparameters -- record it alongside the result, don't treat it as a new condition.
+    resume = os.environ.get("PI05_RESUME", "0") == "1"
+
     os.environ.setdefault("HF_LEROBOT_HOME", str(DATA_ROOT))
     os.environ.setdefault("HF_HOME", "/tmp/hf_home")
     os.environ.setdefault("HF_DATASETS_CACHE", "/tmp/hf_datasets_cache")
@@ -101,7 +110,8 @@ def main() -> None:
         keep_period=None,
         fsdp_devices=fsdp_devices,
         wandb_enabled=False,
-        overwrite=True,
+        overwrite=not resume,
+        resume=resume,
         checkpoint_base_dir=str(REPO_ROOT / "openpi_smoke_checkpoints"),
         assets_base_dir=str(REPO_ROOT / "openpi_smoke_assets"),
         lr_schedule=optimizer.CosineDecaySchedule(
@@ -115,7 +125,7 @@ def main() -> None:
         f"CUDA_VISIBLE_DEVICES={cuda_visible_devices} fsdp_devices={fsdp_devices} "
         f"repo_id={repo_id} config_name={config_name} exp_name={exp_name}\n"
         f"batch_size={batch_size} num_train_steps={num_train_steps} save_interval={save_interval} "
-        f"train_seed={train_seed}\n"
+        f"train_seed={train_seed} resume={resume}\n"
         f"lr: warmup={warmup_steps} peak={peak_lr:g} decay_steps={decay_steps} floor={decay_lr:g}",
         flush=True,
     )
