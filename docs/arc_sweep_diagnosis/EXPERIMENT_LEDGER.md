@@ -73,9 +73,31 @@ clearest evidence that helping the arm catch up to its target actively hurts.
 | `d2b_snap` | 3.0 cm | snap, tolerance 1e-4 | 15.7% | **INVALID**, lookup missed |
 | `d2c_snap` | 3.0 cm | snap, tolerance 2e-3 | 15.7% | **INVALID**, wrong frame |
 | `d2c_nodwell` | 3.0 cm | snap without hold | 15.7% | **INVALID**, wrong frame |
-| `f_snap_hold` | 3.0 cm | snap + hold, frame fixed | 12.0% | first valid run of direction 2 |
-| `f_snap_only` | 3.0 cm | snap without hold | in progress | |
-| `f_hold_only` | 3.0 cm | hold at the nominal target | queued | |
+| `f_snap_hold` | 3.0 cm | snap + hold, frame fixed | **12.0%** | valid: lookup 1137/92, episodes 239→319 |
+| `f_snap_only` | 3.0 cm | snap without hold | **13.0%** | valid: lookup 1147/80 |
+| `f_hold_only` | 3.0 cm | hold at the nominal target | **17.3%** | |
+
+### Direction 2 moved the gripper the wrong way
+
+Distance from each run's own contact poses to the reference run's achieved poses at the same four
+events, matched by layout:
+
+| run | contact 1 | 2 | 3 | 4 |
+|---|---|---|---|---|
+| `d2b_arc` (no intervention) | **0.69 cm** | 0.90 | 0.99 | 3.79 |
+| `f_snap_only` | 0.85 | 1.01 | 2.40 | 9.86 |
+| `f_snap_hold` | **1.59 cm** | 1.97 | 3.16 | 12.18 |
+| `f_hold_only` | 1.39 | 1.94 | 2.44 | 10.13 |
+
+The uncorrected run is already the closest. Retargeting set the *target* to the reference's
+*achieved* pose, and since the arm trails a target by about 5 cm it landed that far short -- whereas
+leaving the target alone lets it trail the same target the reference trailed, arriving where the
+reference arrived. **Direction 2 has therefore not had a fair test**; the correct form adds the
+difference between the two runs' lags, which is a per-step feedback quantity, not a snap.
+
+What the run does establish, more directly than anything before it: the uncorrected arm is within
+**0.69 cm** of the reference at the first contact, against 1.66 cm of grasp clearance per side, and
+success still falls 32.3% → 15.7%.
 
 ## Runs that measured nothing
 

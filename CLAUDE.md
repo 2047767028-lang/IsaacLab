@@ -12,7 +12,7 @@
 
 ## 主线状态（2026-09-02 更新，下次对话先看这里）
 
-### 主线一：双臂 Franka 家具装配（原始项目目标，当前搁置）
+### 主线一：双臂 Franka 家具装配（原始项目目标，当前焦点）
 
 **当前进度**：目前跑通的是官方单臂 `Isaac-Stack-Cube-Franka-IK-Rel-v0`（叠方块任务）的
 record → annotate → generate 全流程，用的是**官方自带的 10 条源演示**，不是自己遥操作
@@ -32,27 +32,46 @@ record → annotate → generate 全流程，用的是**官方自带的 10 条�
 ——已过时，NGC 上那个资源已 404 下架，现在 `cloudxr-js` 是 GA 公开可下，客户端直接用
 浏览器打开 `https://nvidia.github.io/IsaacTeleop/client`。**不要再去申请 Early Access。**
 
-**已向上游提的 PR（4 个，全部 base `develop`，fork 是 `2047767028-lang/IsaacLab`）**：
+**向上游提了四个 PR**（都已核实存在于 upstream `develop`，非本地环境问题；状态 2026-09-02
+核实，随时用 `gh pr list --repo isaac-sim/IsaacLab --author 2047767028-lang --state all` 重查）：
+- #7381 多 GPU 机器上 CloudXR 编码器和渲染器跑到不同物理卡 → 头显里是雪花。**已合并**
+  （2026-08-31）。
+- #7380 CloudXR EULA 无法免交互接受 → headless/CI 启动必失败。分支
+  `fix/cloudxr-eula-noninteractive`。AntoineRichard 的三条意见（replay 路径漏接、测试隔离、
+  文档）8/29 已改完（`7c48a40cf`）；#7381 合并后跟 develop 冲突——两个 PR 在
+  `session_lifecycle.py` 同一位置各加了一段模块级辅助函数，9/2 用 **merge develop** 的方式
+  解决（`c4711125b`，两段纯新增全保留；不 rebase 是为了不 force-push 改写 PR 上的 review
+  历史），`test_cloudxr_lifecycle.py` 33 个用例在 `ISAACLAB_CXR_ACCEPT_EULA` 未设/`1`/`0`
+  三种取值下全过，已在 PR 回复。现在等维护者审批。
+- #7433 `DataGenConfig.max_num_failures` 全仓库 18 处赋值但从未被读取（就是主线二 2.1 节
+  踩的那个坑）→ 让它真正兜底。分支 `fix/mimic-max-num-failures`。两条 bot 意见已处理：
+  `generation_guarantee` 门控已加（`3bcd74c09`，固定尝试次数模式不受 cap 影响）；"新文件
+  license 头应该是 BSD"是**误报**——`.pre-commit-config.yaml` 对 `source/isaaclab_mimic/`
+  强制 Apache-2.0 头，隔壁 `mimic_test_utils.py` 就是同款，已在 PR 里回复。等
+  kellyguo11/peterd-NV 审批。
+- #7434 `cubes_stacked` 只看瞬时几何构型，方块下落途中经过"叠好"的高度也算成功，而 Mimic
+  生成器按"任意帧曾成功"累计，一帧误判就把整条 episode 当成功 demo 写进数据集 → 加线速度
+  门控（默认 0.05 m/s，可传 `None` 关掉）。分支 `fix/cubes-stacked-at-rest`。ooctipus 要求
+  删测试文件，kellyguo11 8/31 接受"不用 Kit 能快跑就留着"，9/2 删掉 `AppLauncher` 前导
+  （`282d9cca0`），12 个用例 0.68 秒无 Kit 通过，已在 PR 回复。等审批。
 
-| PR | 内容 | 状态 |
-|---|---|---|
-| #7380 | CloudXR EULA 无法免交互接受 → headless/CI 启动必失败 | OPEN |
-| #7381 | 多 GPU 机器上 CloudXR 编码器和渲染器跑到不同物理卡 → 头显里是雪花 | OPEN |
-| **#7433** | `DataGenConfig.max_num_failures` 从未被读取，接上并改为 opt-in | OPEN，见 2.12 |
-| **#7434** | `cubes_stacked` 会在方块自由落体途中判成功 | OPEN，见 2.12 |
+前两个的核实过程、证据、代码定位见 `docs/upstream_bug_findings_xr_teleop.md`。
 
-⚠️ 这个仓库的 Docker/GPU CI 是**按需触发**的：要在 PR 下评论 `run-ci` 才会跑新加的测试。
-两个新 PR 目前只过了 Greptile + labeler，重型测试**一次都没跑过**。
-
-核实过程、证据、代码定位见 `docs/upstream_bug_findings_xr_teleop.md`。
+**本机怎么跑 develop 分支（3.x）的测试**：本机 conda `isaaclab` 是 2.3.2，`import isaaclab`
+就要 Kit（`utils/mesh.py` 导 `pxr`），而且本地根本没有 `contrib/stack`、`isaaclab_teleop`。
+办法：给 PR 分支建 worktree；`pip install --target <临时目录> lazy_loader`（develop 新依赖，
+把顺带装进来的 `packaging*` 删掉，否则会压掉环境里的版本）；`PYTHONPATH` 放 worktree 下
+**全部** `source/*` 包外加那个临时目录，然后
+`conda run -n isaaclab python -m pytest <文件> -p no:cacheprovider`。只放 `isaaclab`/
+`isaaclab_tasks` 不够——`isaaclab_assets` 会落到本机 2.3.2 版本，报
+"`RigidBodyPropertiesCfg` has moved to `isaaclab_physx`"。develop 核心包已是懒加载，纯张量
+逻辑的单测 1 秒内导入完、不加载任何 `omni`/`carb`/`pxr`。需要 `carb`/`pxr`/`isaacteleop` 或
+真实 teleop 进程的测试文件本机跑不了，是环境限制；判断有没有回归要拿原封不动的
+`origin/develop` 用同样方式跑一遍做对照，比对每个文件的通过数。develop 的 lint 是
+**ruff 0.14.10 + codespell**（不是 black/isort），在 worktree 根目录跑
+`uvx ruff@0.14.10 check/format --check <文件>` 就能吃到 pyproject 里的配置。
 
 ### 主线二：接触锚定的扰动增广（研究，进行中）
-
-**当前焦点（2026-09-02）**：不是训练也不是扫描，是**机制诊断**。2.9 得出"扰动增广既无害也无益"
-之后，用户质疑生成成功率的下降本身；追下去发现设计文档的核心机制表述不成立（2.10），
-十二组修法实验全部失败（2.11），顺带抓出两个 MimicGen upstream bug 并提了 PR（2.12）。
-**唯一仍在跑的**是用户提的"靠拢平行组实际位姿"那个方向的修正版。
-
 
 ⚠️ **新开 session 先读 `docs/主线二_思维链交接.md`**——那份记的是**推理链条本身**（信念怎么变的、现在哪些确信哪些悬着、下一步的逻辑分叉、已走过的死路、踩过的推理陷阱），本节记的是事实和数字，两者互补。
 
@@ -636,6 +655,46 @@ episode 全是掉落：末帧几何成立 0/76，方块平均移动 10.8cm。真
 
 **PR 材料**：正文、复核脚本、四组闭环日志在 fork 的 `mimic-pr-evidence` 分支
 `docs/mimic_pr_evidence/`；两个 PR 分支 `fix/mimic-max-num-failures`、`fix/cubes-stacked-at-rest`。
+
+#### 2.13 方向二（靠拢平行组实际位姿）：首次有效实验，结果为负（2026-09-02）
+
+用户提的方向二不是"提高增益去追目标"（那是我误测的版本，已否），而是**跑一组平行 MimicGen、
+用它实际到达的夹爪位置当参照去靠拢**。实现：按场景布局查参照表 + 冻结段斜坡重定向 + 无噪声驻留。
+
+**前三次运行全部无效**（见坑速查"静默失效"条）。第四次经机制核验后生效：查表命中 92~93%、
+episode 长度 239→319。
+
+Group D（`num_envs=10`+重新播种，**只能组内比**，见 `EXPERIMENT_LEDGER.md`）：
+
+| 组 | 干预 | 成功率 |
+|---|---|---|
+| `d2b_ref` | arc 0.5cm | 32.3% |
+| `d2b_arc` | arc 3.0cm，无干预（对照） | **15.7%** |
+| `f_snap_hold` | 靠拢 + 驻留 | **12.0%** |
+| `f_snap_only` | 靠拢，不驻留 | **13.0%** |
+| `f_hold_only` | 只驻留（瞄准原目标） | 17.3% |
+
+**⚠️ 但这不是对方向二的公平判决——我在实现里犯了和 2.10 同一类的错。** 验证"靠拢是否真的
+让夹爪贴近参照位姿"，结果是**反的**（到参照组接触位姿的距离）：
+
+| 组 | 接触1 | 接触2 | 接触3 | 接触4 |
+|---|---|---|---|---|
+| **对照（什么都不做）** | **0.69cm** | 0.90cm | 0.99cm | 3.79cm |
+| 靠拢+驻留 | 1.59cm | 1.97cm | 3.16cm | 12.18cm |
+
+原因：我把**目标**设成了参照组的**实际位姿**，而手臂落后目标约 5cm，于是停在参照位姿再往后
+5cm 处。**而什么都不做的对照，追的是和参照组同一个目标、以同样方式落后，自然就落在参照组
+实际到过的位置附近。** 我"修正"了一个本来已经对的东西。
+
+**所以方向二仍未被公平测试。** 正确实现要补的是"两次运行滞后量之差"（逐步反馈量），
+而不是把目标直接设成对方的实际位姿。
+
+**但这一轮给了一条强旁证**：对照组在第一次接触时**已经只差参照组 0.69cm**（方块 4.68cm、
+夹爪每边余量 1.66cm），而成功率仍从 32.3% 掉到 15.7%。**接触位姿基本一致、成功率仍然腰斩**
+——比 2.11 那条"载体不是接触时手臂位置"的间接推断强得多，这次是直接量出来的。
+
+用户的物理论证（位姿一样就不该失败）**严格说仍未被证伪**，因为 0.69cm ≠ 0；但要用它解释
+16.6pp 的成功率差，需要说明 0.69cm 如何在 1.66cm 余量下造成这么大影响。
 
 ## 主线二的成功判据（2026-08-21 用户定义，两层，别混着说）
 
