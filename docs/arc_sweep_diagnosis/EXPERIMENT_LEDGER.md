@@ -361,3 +361,32 @@ subtasks only, at 5–10 cm, under the gate (group A had `ARC_SUBTASKS=0` at 3 c
 33.3% against 22.0% for all four). Also untested: a horizontal-only direction prior (vertical arcs
 are followed worst and return worst), and a longer frozen tail for large arcs (freeze 0.5 fixed
 3 cm in group F at ~30% less integrated perturbation).
+
+### Group H addendum — the seat is born at the grasp, not in the carry (`seat_grasp_vs_release.py`)
+
+| run | seat at grasp | seat at release | carry slip (release − grasp) | carry accel max | accel p90 |
+|---|---|---|---|---|---|
+| source demos | 0.32 / 0.82 | 0.51 / 0.80 | 0.06 / 0.46 | 0.66 / 0.94 | 0.36 / 0.46 |
+| `gt_zero` | 0.61 / 1.20 | 0.86 / 1.54 | 0.20 / 0.93 | 1.34 / 1.77 | 0.86 / 1.00 |
+| `gt30` | 0.73 / 1.65 | 0.92 / 2.00 | 0.21 / 1.08 | 1.35 / 1.68 | 0.83 / 0.96 |
+| `big5` | 0.85 / 2.91 | 1.20 / 4.33 | 0.29 / 2.87 | 1.33 / 1.73 | 0.81 / 0.96 |
+| `st5` | 1.18 / 4.10 | 1.75 / 4.76 | 0.26 / 1.80 | 1.42 / 1.87 | 0.88 / 0.96 |
+| `big10` | 1.85 / 5.09 | 2.84 / 13.45 | 0.38 / 9.58 | 1.35 / 1.77 | 0.80 / 0.92 |
+| `st10` | 2.49 / 7.30 | 3.41 / 8.79 | 0.19 / 3.26 | 1.38 / 1.73 | 0.85 / 0.96 |
+
+(cm and cm/frame², median / p90.) Carry accelerations do not change with the arc at all — the
+tracker smooths the bump and the action noise sets them (at twice the source demos'). The offset
+that breaks placement is already there at closure and grows with amplitude; the carry adds
+0.2–0.4 cm at every amplitude, with a real tail only at 10 cm (cube dropped or rotated in hand).
+**Withdrawn**: "the carry slips the cube when the arc exceeds the noise" (the user's objection —
+slip is an inertial-force condition — stands, and it is not reached), and the "arc on the grasp
+segments only" suggestion (the carry segments tolerate the arc; the grasp segments' approach is
+where the damage originates).
+
+Terminology fixed by the user (2026-09-04): **抓取段** = subtasks 0/2 (empty gripper approaching a
+cube); **搬运段** = subtasks 1/3 (carrying); **冻结段** = the frozen target at the end of every
+subtask where the arm is let approach; **接近段** = the part of any subtask where the gripper
+approaches the object it interacts with. Design direction: keep the arc on the whole trajectory;
+make the bump's return complete before the 冻结段 (peak earlier via the unused v3
+`PERTURB_ARC_PEAK_FRAC`, freeze length growing with amplitude) so the 接近段 carries source-like
+lag and direction; acceptance metric = seat at grasp back near the 0 cm run's 0.61 cm.
