@@ -78,6 +78,8 @@ RAMP = int(os.environ.get("RAMP", "10"))
 REF_TABLE = os.environ.get("REF_TABLE", "")
 HITS_FILE = os.environ.get("HITS_FILE", "")
 CMD_DIR = os.environ.get("CMD_DIR", "")   # if set, dump each subtask's commanded path (unperturbed + perturbed)
+STRETCH = int(os.environ.get("PERTURB_ARC_STRETCH", "1"))  # repeat every free-zone command frame this many times
+FREEZE = float(os.environ.get("PERTURB_ARC_FREEZE_FRAC", "0.3"))
 GATE_TOL = float(os.environ.get("GATE_TOL", "0.003"))   # metres; gate_target releases below this
 GATE_MAX = int(os.environ.get("GATE_MAX", "40"))         # frames; gate_target gives up after this many
 CUBES = ("cube_1", "cube_2", "cube_3")
@@ -99,7 +101,7 @@ def install_contact_fix():
     state = {
         "in_subtask": False, "env": None, "subtask": 0, "row": {},
         "hits": 0, "misses": 0, "applied": 0, "no_transition": 0, "nearest": float("nan"),
-        "gate_holds": [], "layout": {}, "unperturbed": None, "cmd_count": 0,
+        "gate_holds": [], "layout": {}, "unperturbed": None, "cmd_count": 0, "stretched": 0,
     }
 
     if CMD_DIR:
@@ -147,7 +149,8 @@ def install_contact_fix():
             with open(HITS_FILE, "w") as fh:
                 fh.write(
                     f"mode={MODE} hits={state['hits']} misses={state['misses']} applied={state['applied']} "
-                    f"no_transition={state['no_transition']} last_nearest={state['nearest']:.6f}{gate_line}\n"
+                    f"no_transition={state['no_transition']} stretched={state['stretched']} "
+                    f"last_nearest={state['nearest']:.6f}{gate_line}\n"
                 )
 
     def wrapped_method(self, env_id, eef_name, subtask_ind, *a, **kw):
@@ -184,6 +187,26 @@ def install_contact_fix():
     def fixed_from_poses(cls, poses, gripper_actions, action_noise):
         # Only the subtask segment built inside generate_eef_subtask_trajectory is touched; the
         # one-pose init sequence and the interpolation frames built by merge() pass through.
+        if state["in_subtask"] and poses.shape[0] >= 2 and STRETCH > 1:
+            # Time-stretch the free zone: every command frame in the first (1 - FREEZE) of the
+            # segment is repeated STRETCH times, so the target advances at 1/STRETCH of its speed
+            # and the arc bump lasts STRETCH times longer. The loop is a ~10-frame first-order
+            # tracker (group G), which cuts a 40-frame bump to ~42%; a slower bump is followed more
+            # fully and demands less lateral acceleration during the carry. The frozen tail and
+            # the contact frame keep their original timing. Repetition rather than interpolation so
+            # that orientations need no slerp; a 2-frame staircase is invisible to a 10-frame filter.
+            T0 = poses.shape[0]
+            free_len = int(round(T0 * (1.0 - FREEZE)))
+            if free_len >= 2:
+                idx = torch.cat([
+                    torch.arange(free_len, device=poses.device).repeat_interleave(STRETCH),
+                    torch.arange(free_len, T0, device=poses.device),
+                ])
+                poses = poses[idx]
+                gripper_actions = gripper_actions[idx]
+                if torch.is_tensor(action_noise) and action_noise.numel() == T0:
+                    action_noise = action_noise.reshape(-1)[idx.cpu()]
+                state["stretched"] += 1
         if state["in_subtask"] and poses.shape[0] >= 2:
             dump_cmd(poses)
         if not state["in_subtask"] or poses.shape[0] < 2 or MODE == "none":
@@ -288,7 +311,8 @@ def main():
     )
 
     install_contact_fix()
-    print(f"[contact] mode={MODE} hold={HOLD} ramp={RAMP} gate_tol={GATE_TOL} gate_max={GATE_MAX} table={REF_TABLE or '-'}")
+    print(f"[contact] mode={MODE} hold={HOLD} ramp={RAMP} gate_tol={GATE_TOL} gate_max={GATE_MAX} "
+          f"stretch={STRETCH} freeze={FREEZE} table={REF_TABLE or '-'}")
     print(f"[cfg] arc_std={os.environ.get('PERTURB_ARC_STD')} attempts={args_cli.attempts}"
           f" guarantee={env_cfg.datagen_config.generation_guarantee} seed={env_cfg.datagen_config.seed}")
 
