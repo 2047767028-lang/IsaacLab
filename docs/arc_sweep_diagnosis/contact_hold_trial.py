@@ -25,6 +25,10 @@ exactly one transition, 10-20 frames before its end). Three modes, via CONTACT_F
                layout). The target is ramped onto that position over RAMP frames before c and
                ramped back over RAMP frames after, so there is no jump in either direction. This is
                the "parallel MimicGen, copy its pose, transition smoothly" proposal.
+  gate_target  like hold_target, but instead of a fixed HOLD the single inserted frame is repeated
+               at execution time until |target - achieved| < GATE_TOL (default 0.3 cm) or GATE_MAX
+               (default 40) steps have been spent. The hold length per event is recorded in
+               HITS_FILE. This is the form a patch would take: converge, then act.
 
 Only the translation is touched; orientation stays the source's. Nothing in the installed tree is
 modified: the two hooks are the same monkeypatches fix_trial.py used. Per-episode reseeding (RESEED=1)
@@ -73,13 +77,15 @@ HOLD = int(os.environ.get("HOLD", "20"))
 RAMP = int(os.environ.get("RAMP", "10"))
 REF_TABLE = os.environ.get("REF_TABLE", "")
 HITS_FILE = os.environ.get("HITS_FILE", "")
+GATE_TOL = float(os.environ.get("GATE_TOL", "0.003"))   # metres; gate_target releases below this
+GATE_MAX = int(os.environ.get("GATE_MAX", "40"))         # frames; gate_target gives up after this many
 CUBES = ("cube_1", "cube_2", "cube_3")
-assert MODE in ("none", "hold_target", "snap_ref"), MODE
+assert MODE in ("none", "hold_target", "snap_ref", "gate_target"), MODE
 
 
 def install_contact_fix():
     import isaaclab_mimic.datagen.data_generator as dg
-    from isaaclab_mimic.datagen.waypoint import WaypointSequence
+    from isaaclab_mimic.datagen.waypoint import MultiWaypoint, WaypointSequence
 
     table_keys = table_poses = None
     if MODE == "snap_ref":
@@ -92,14 +98,20 @@ def install_contact_fix():
     state = {
         "in_subtask": False, "env": None, "subtask": 0, "row": {},
         "hits": 0, "misses": 0, "applied": 0, "no_transition": 0, "nearest": float("nan"),
+        "gate_holds": [],
     }
 
     def write_counters():
         if HITS_FILE:
+            g = np.array(state["gate_holds"]) if state["gate_holds"] else None
+            gate_line = ""
+            if g is not None:
+                gate_line = (f" gates={len(g)} hold_mean={g.mean():.1f} hold_p90={np.percentile(g, 90):.0f}"
+                             f" hold_max={g.max()} hit_max_frac={(g >= GATE_MAX).mean():.3f}")
             with open(HITS_FILE, "w") as fh:
                 fh.write(
                     f"mode={MODE} hits={state['hits']} misses={state['misses']} applied={state['applied']} "
-                    f"no_transition={state['no_transition']} last_nearest={state['nearest']:.6f}\n"
+                    f"no_transition={state['no_transition']} last_nearest={state['nearest']:.6f}{gate_line}\n"
                 )
 
     def wrapped_method(self, env_id, eef_name, subtask_ind, *a, **kw):
@@ -167,17 +179,56 @@ def install_contact_fix():
                 s2 = torch.linspace(1.0, 0.0, m_out + 1, device=P.device, dtype=P.dtype)[:-1]
                 P[c:c + m_out, :3, 3] += s2[:, None] * offset[None, :]
 
-        hold = P[c:c + 1].expand(HOLD, -1, -1).clone()
+        # gate_target inserts a single hold frame and lets the execution hook repeat it until the arm
+        # has converged; the fixed modes insert HOLD copies up front.
+        n_hold = 1 if MODE == "gate_target" else HOLD
+        hold = P[c:c + 1].expand(n_hold, -1, -1).clone()
         hold[:, :3, 3] = hold_pos[None, :]
         new_poses = torch.cat([P[:c], hold, P[c:]], dim=0)
-        new_grip = torch.cat([gripper_actions[:c], gripper_actions[c - 1:c].expand(HOLD, -1), gripper_actions[c:]], dim=0)
-        new_noise = torch.cat([noise[:c], torch.zeros((HOLD, 1), dtype=noise.dtype), noise[c:]], dim=0)
+        new_grip = torch.cat([gripper_actions[:c], gripper_actions[c - 1:c].expand(n_hold, -1), gripper_actions[c:]], dim=0)
+        new_noise = torch.cat([noise[:c], torch.zeros((n_hold, 1), dtype=noise.dtype), noise[c:]], dim=0)
         state["applied"] += 1
         write_counters()
-        return orig_from_poses(cls, new_poses, new_grip, new_noise)
+        seq = orig_from_poses(cls, new_poses, new_grip, new_noise)
+        if MODE == "gate_target":
+            # Waypoint is a plain object and WaypointSequence/merge only deepcopy or concatenate, so
+            # an attribute set here survives to execution.
+            seq.sequence[c].gate = True
+        return seq
 
     dg.DataGenerator.generate_eef_subtask_trajectory = wrapped_method
     WaypointSequence.from_poses = classmethod(fixed_from_poses)
+
+    if MODE == "gate_target":
+        orig_execute = MultiWaypoint.execute
+
+        async def gated_execute(self, env, success_term, env_id=0, env_action_queue=None):
+            """Step the gated waypoint again until |target - achieved| < GATE_TOL or GATE_MAX steps.
+
+            Every repeat is a full env.step, so the recorder (which is what export_episodes writes
+            from) sees the whole hold; the returned lists are concatenated for the caller.
+            """
+            res = await orig_execute(self, env, success_term, env_id=env_id, env_action_queue=env_action_queue)
+            eef_name, wp = next(iter(self.waypoints.items()))
+            if not getattr(wp, "gate", False):
+                return res
+            n = 1
+            while n < GATE_MAX:
+                cur = env.get_robot_eef_pose(eef_name, env_ids=[env_id])[0]
+                if float((wp.pose[:3, 3] - cur[:3, 3]).norm()) < GATE_TOL:
+                    break
+                more = await orig_execute(self, env, success_term, env_id=env_id, env_action_queue=env_action_queue)
+                res["states"] += more["states"]
+                res["observations"] += more["observations"]
+                res["actions"] += more["actions"]
+                res["success"] = res["success"] or more["success"]
+                n += 1
+            state["gate_holds"].append(n)
+            if len(state["gate_holds"]) % 20 == 0:
+                write_counters()
+            return res
+
+        MultiWaypoint.execute = gated_execute
     return state
 
 
@@ -195,7 +246,7 @@ def main():
     )
 
     install_contact_fix()
-    print(f"[contact] mode={MODE} hold={HOLD} ramp={RAMP} table={REF_TABLE or '-'}")
+    print(f"[contact] mode={MODE} hold={HOLD} ramp={RAMP} gate_tol={GATE_TOL} gate_max={GATE_MAX} table={REF_TABLE or '-'}")
     print(f"[cfg] arc_std={os.environ.get('PERTURB_ARC_STD')} attempts={args_cli.attempts}"
           f" guarantee={env_cfg.datagen_config.generation_guarantee} seed={env_cfg.datagen_config.seed}")
 
