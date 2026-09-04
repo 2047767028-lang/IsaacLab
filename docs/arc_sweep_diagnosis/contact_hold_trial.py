@@ -205,8 +205,12 @@ def main():
         orig_reset = env.reset
         reset_count = {"n": 0}
 
+        # RESEED_BASE selects which fixed scene sequence is used. Runs sharing a base see the same
+        # scenes (pairable); changing it is how robustness to the scene draw is tested.
+        base = int(os.environ.get("RESEED_BASE", "1000000"))
+
         def seeded_reset(*a, **kw):
-            seed = 1_000_000 + reset_count["n"]
+            seed = base + reset_count["n"]
             reset_count["n"] += 1
             torch.manual_seed(seed)
             np.random.seed(seed % (2**32))
@@ -214,7 +218,7 @@ def main():
             return orig_reset(*a, **kw)
 
         env.reset = seeded_reset
-        print("[contact] deterministic per-episode reseeding enabled")
+        print(f"[contact] deterministic per-episode reseeding enabled, base={base}")
     random.seed(env.cfg.datagen_config.seed)
     np.random.seed(env.cfg.datagen_config.seed)
     torch.manual_seed(env.cfg.datagen_config.seed)
