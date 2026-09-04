@@ -318,3 +318,46 @@ itself in achieved deviation and pays in placement. The levers the cause points 
 priors (upper hemisphere / human cone) remain untested; the offline geometry check
 (`big_arc_geometry.py`) found table penetration impossible on this task (the arm is 16-21 cm up at
 the envelope peak) and isotropic arcs newly grazing an uninvolved cube only 3-4% of the time.
+
+## Group H — slowing the bump: free zone time-stretched 2x (2026-09-04)
+
+Runner `run_contact_hold_phase6.sh`; `PERTURB_ARC_STRETCH=2` repeats every free-zone command frame
+twice (frozen tail and contact frame keep their timing); gate cap 60; freeze 0.3; isotropic; draw 1.
+
+| run | arc | stretch | commanded peak | achieved peak (med / p90) | ach / cmd | at contact | cube_2 on cube_1 | success |
+|---|---|---|---|---|---|---|---|---|
+| `gt_zero` (G) | 0 | 1 | 0 | 0 | — | 0.29 cm | 71.1% | 51.5% |
+| `st0` | 0 | 2 | 0 | 0 | — | 0.50 | 68.7% | **52.7%** |
+| `big5` (G) | 5 cm | 1 | 4.35 | 1.88 / 3.52 | 0.43 | 0.64 | 46.0% | 26.0% |
+| `st5` | 5 cm | 2 | 4.42 | **2.40** / 3.94 | 0.54 | **1.03** | **39.0%** | **22.3%** |
+| `big10` (G) | 10 cm | 1 | 8.34 | 3.49 / 6.62 | 0.42 | 1.58 | 16.3% | 6.0% |
+| `st10` | 10 cm | 2 | 8.36 | **4.57** / 7.69 | 0.55 | **2.83** | **10.3%** | **4.3%** |
+
+Direction dependence (`arc_direction_dependence.py`): the achieved fraction barely depends on the
+arc's angle to the base–eef axis (0.33–0.43), so this is not a singular posture; it depends on the
+vertical component (horizontal arcs 0.44–0.45, vertical ones 0.25–0.28 at 5–10 cm) and on the
+subtask (carries 0.44–0.46, the cube_3 approach 0.28).
+
+### Readings
+
+- Slowing the free zone alone changes nothing (0 cm: 51.5 → 52.7%), so it is a clean control.
+- The stretch does what the low-pass model says: the arm follows more of the bump (0.38 → 0.59
+  overall, in line with a ~10-frame tracker on an 80-frame bump). **Following the bump better
+  makes placement worse.** The arm enters the frozen tail farther from the nominal path
+  (2.4 vs 1.9 cm at 5 cm; 4.6 vs 3.5 at 10 cm), the 18-frame tail plus the gate do not bring it
+  back (residual at contact 0.64 → 1.03 cm, 1.58 → 2.83 cm), and the cube's seat at release
+  worsens (1.20 → 1.75 cm at 5 cm).
+- So above ~3 cm the limiting factor is not "the bump is too fast to follow" but "a followed bump
+  cannot be undone in the frozen tail, and the carry disturbs the cube on the way". Time at the
+  contact frame does not help (group G: raising the gate cap changed nothing); time in the free
+  zone makes it worse.
+
+### What this leaves
+
+The losses at every large amplitude sit in the carrying subtasks (1 and 3: cube_2 on cube_1
+collapses first). The approach subtasks (0 and 2, empty gripper) are where a different path is
+wanted for training and where nothing is in the jaws to disturb. Untested: arc on the approach
+subtasks only, at 5–10 cm, under the gate (group A had `ARC_SUBTASKS=0` at 3 cm without any hold:
+33.3% against 22.0% for all four). Also untested: a horizontal-only direction prior (vertical arcs
+are followed worst and return worst), and a longer frozen tail for large arcs (freeze 0.5 fixed
+3 cm in group F at ~30% less integrated perturbation).
