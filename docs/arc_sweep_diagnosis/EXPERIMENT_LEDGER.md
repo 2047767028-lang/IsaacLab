@@ -124,3 +124,89 @@ Before a full run of any intervention, check one metric that says *it happened*:
 And never gate a queue on `pgrep -f <pattern>`: twice a queue hung for hours because the shell that
 launched it, or the one that checked on it, carried the pattern in its own command line. Tightening
 the pattern does not fix this; the next command that mentions the new pattern hangs it again.
+
+## Group E — num_envs 10, reseeding, hold at the contact frame (2026-09-02)
+
+Scripts `contact_hold_trial.py` / `build_contact_table.py` / `run_contact_hold.sh` /
+`contact_hold_analysis.py`; outputs (hdf5, logs, hit counters, `ref_table.npz`) preserved under
+`datasets/arc_sweep_diagnosis_runs/contact_hold/`. Same harness as group D, and the two controls
+reproduce group D to the episode (97/300 and 47/300), so the differences below are the interventions.
+
+| run | arc | intervention | result | mechanism check |
+|---|---|---|---|---|
+| `ref_none` | 0.5 cm | — | **32.3%** | = `d2b_ref` |
+| `arc_none` | 3.0 cm | — | **15.7%** | = `d2b_arc` |
+| `arc_snap` | 3.0 cm | ramp onto the reference run's achieved contact position over 10 frames, hold it 20 noise-free frames, ramp back | **19.7%** | lookup 290/310, 1229 holds inserted; distance to the reference at contact 1: 0.69 → **0.36 cm** — the retarget worked this time |
+| `arc_hold` | 3.0 cm | hold 20 noise-free frames at the **nominal target** before every gripper transition; no reference run | **39.0%** | episodes 230 → 310; reach at grasp 1.42 → **0.85 cm** |
+| `ref_hold` | 0.5 cm | same hold | **50.3%** | reach at grasp 1.12 → 0.84 cm; cube offset at release 1.37 → 0.92 cm (source demos: 0.56 / 0.90) |
+
+### Stage funnel (fraction of 300 attempts reaching each stage)
+
+| run | cube_2 lifted | cube_2 on cube_1 | cube_3 lifted | success |
+|---|---|---|---|---|
+| `ref_none` | 97.7% | 51.7% | 39.0% | 32.3% |
+| `ref_hold` | 99.7% | **69.7%** | **63.7%** | **50.3%** |
+| `arc_none` | 94.7% | 33.7% | 24.0% | 15.7% |
+| `arc_snap` | 95.0% | 42.0% | 27.3% | 19.7% |
+| `arc_hold` | 98.7% | 61.3% | 53.0% | 39.0% |
+
+The hold acts on placement and on the second grasp; the first grasp barely fails in any condition.
+
+### Same-scene split by the reference run's own outcome (1 mm layout key, ~half of episodes pair)
+
+| run | scenes where `ref_none` succeeded | scenes where it failed |
+|---|---|---|
+| `arc_none` | 27.5% | 3.5% |
+| `arc_snap` | 47.9% | 6.2% |
+| `arc_hold` | **63.8%** | **17.4%** |
+| `ref_hold` | 82.4% | 25.3% |
+
+Copying the reference helps only where the reference was right; holding at the nominal target helps
+on both kinds of scene, including 17% of the scenes the reference itself lost.
+
+### Why group D's direction-2 runs measured nothing — the second, larger reason
+
+`snap_to_reference` set `delta = ref_contact_pose − last_target_of_subtask`. The subtask's last
+target is not the contact frame: `grasp_1`/`grasp_2` fire on the gripper-transition frame itself
+(`stack_1` two frames later, measured on all 10 demos), `datagen_info_pool.py:157-163` ends the
+subtask one frame after the signal, and `randomize_subtask_boundaries` adds 10–20 more. In the source
+demos the arm travels a median **10.0 / 15.1 / 17.3 cm** in the 10 / 15 / 20 frames after a contact
+event (`post_contact_motion.py`). The tail was pushed along a 10–17 cm vector that mixed "where the
+reference was at contact" with "where the source arm went afterwards". The lag explanation given in
+CLAUDE.md 2.13 was at most a minor contributor.
+
+### What this group overturns
+
+- **"Arm position at contact is not the carrier" (REMEDIES.md) is withdrawn.** Remedy 3 dwelled at
+  the start of the next subtask and remedy 5 at the subtask end — both 11–23 frames after the gripper
+  had acted — so neither converged the arm at contact. The 0.69 cm figure is the median over
+  successful grasps; the failing grasps sit at 1.88 cm (`premise_test.py`, row 1). Position at contact
+  is the carrier, and the hold that fixes it lifts 3.0 cm arc from 15.7% to 39.0%.
+- **"The 5 cm lag is part of the replay and any catch-up pushes the arm where the source never was"
+  (CLAUDE.md 2.10) is true in motion and false at contact.** `lag_structure.py`: |target − achieved|
+  in the source demos is 4.86 cm median over ordinary frames (91% above 0.3 cm) and **0.00 cm** at the
+  gripper-action frames (70% below 0.3 cm). The human releases the stick, the arm settles, then the
+  gripper acts (`contact_frames_and_funnel.py` prints one demo frame by frame). At that frame the
+  target *is* the source arm's position, so holding at the target reproduces the source.
+- **Copying the parallel run's achieved pose is the wrong reference.** That run is 1.12 cm from the
+  cube at closure (source human 0.56 cm) and fails 68% of the time; its contact positions carry its
+  own noise error and, in most scenes, a failing pose.
+
+### What remains
+
+After the hold, arc 3.0 cm still trails 0.5 cm by 11.3 pp, almost all of it at "cube_2 on cube_1"
+(61.3% vs 69.7%): release xy p90 5.34 cm vs 1.70 cm with medians aligned (1.17 vs 0.92). The arm is
+in place; the cube in the jaws is not. Cube seat / orientation after the arc-perturbed approach is
+the next quantity to measure — the hdf5s here suffice.
+
+### Caveats
+
+One generation seed, n = 300 per run, HOLD = 20 and RAMP = 10 untuned, episodes 35% longer,
+`PERTURB_STD` at the task default (0.02) as in group D. Whether a policy trained on held data
+behaves differently is untested.
+
+### Upstream note
+
+MimicGen's `SubTaskConfig.num_fixed_steps` is a dwell — but at the *start* of each subtask, and every
+shipped Franka stack config sets it to 0. The dwell that matters is before each gripper transition.
+Candidate patch: a `num_settle_steps_before_gripper` option (or convergence-gated gripper actions).

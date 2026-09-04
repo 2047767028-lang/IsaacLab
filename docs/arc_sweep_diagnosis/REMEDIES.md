@@ -82,3 +82,12 @@ Both cost a run and are worth remembering.
 - Two queued scripts both waited on "no `fix_trial.py` running", which was true for both at the
   instant the first batch ended, so two Isaac Sim instances launched onto the same 12 GB card. Queue
   on the other queue's completion marker, not on a shared idle condition.
+
+
+## Superseded (2026-09-02, group E)
+
+The "what carries the damage" table above is withdrawn. Neither dwell converged the arm at the
+contact frame (both sit 11–23 frames after the gripper transition), so "arm position at contact"
+was never tested here. A 20-frame noise-free hold placed before each gripper transition lifts
+3.0 cm arc from 15.7% to 39.0% and the 0.5 cm reference from 32.3% to 50.3%. See
+EXPERIMENT_LEDGER.md group E and `contact_hold_trial.py`.
