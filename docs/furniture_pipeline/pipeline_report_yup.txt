@@ -1,0 +1,48 @@
+spawned square_table_top from square_table_top.usd at (0.0, 0.0, 0.25)
+spawned square_table_leg1 from square_table_leg1.usd at (0.25, 0.15, 0.25)
+spawned square_table_leg2 from square_table_leg2.usd at (0.25, -0.15, 0.25)
+spawned square_table_leg3 from square_table_leg3.usd at (-0.25, 0.15, 0.25)
+spawned square_table_leg4 from square_table_leg4.usd at (-0.25, -0.15, 0.25)
+
+simulation device: cuda:0, dt=0.008333333333333333
+loaded 5 parts
+
+--- step 0 (t=0.000s) ---
+  square_table_top     pos=(+0.0000,-0.0000,+0.2459)  |v|=0.24525
+  square_table_leg1    pos=(+0.2500,+0.1500,+0.2459)  |v|=0.24525
+  square_table_leg2    pos=(+0.2500,-0.1500,+0.2459)  |v|=0.24525
+  square_table_leg3    pos=(-0.2500,+0.1500,+0.2459)  |v|=0.24525
+  square_table_leg4    pos=(-0.2500,-0.1500,+0.2459)  |v|=0.24525
+--- step 60 (t=0.500s) ---
+  square_table_top     pos=(-0.0000,+0.0000,+0.0157)  |v|=0.00000
+  square_table_leg1    pos=(+0.2508,+0.0976,+0.0156)  |v|=0.00201
+  square_table_leg2    pos=(+0.2599,-0.0937,+0.0154)  |v|=0.00036
+  square_table_leg3    pos=(-0.2492,+0.1512,+0.0563)  |v|=0.02003
+  square_table_leg4    pos=(-0.1933,-0.1777,+0.0150)  |v|=0.00001
+--- step 120 (t=1.000s) ---
+  square_table_top     pos=(-0.0000,+0.0000,+0.0157)  |v|=0.00000
+  square_table_leg1    pos=(+0.2508,+0.0976,+0.0156)  |v|=0.00003
+  square_table_leg2    pos=(+0.2599,-0.0937,+0.0154)  |v|=0.00023
+  square_table_leg3    pos=(-0.2492,+0.1512,+0.0562)  |v|=0.00411
+  square_table_leg4    pos=(-0.1933,-0.1777,+0.0150)  |v|=0.00001
+--- step 240 (t=2.000s) ---
+  square_table_top     pos=(-0.0000,+0.0000,+0.0157)  |v|=0.00000
+  square_table_leg1    pos=(+0.2508,+0.0976,+0.0156)  |v|=0.00003
+  square_table_leg2    pos=(+0.2599,-0.0937,+0.0154)  |v|=0.00023
+  square_table_leg3    pos=(-0.2492,+0.1512,+0.0562)  |v|=0.00425
+  square_table_leg4    pos=(-0.1933,-0.1777,+0.0150)  |v|=0.00001
+--- step 399 (t=3.325s) ---
+  square_table_top     pos=(-0.0000,+0.0000,+0.0157)  |v|=0.00000
+  square_table_leg1    pos=(+0.2508,+0.0976,+0.0156)  |v|=0.00003
+  square_table_leg2    pos=(+0.2599,-0.0937,+0.0154)  |v|=0.00023
+  square_table_leg3    pos=(-0.2492,+0.1512,+0.0563)  |v|=0.00228
+  square_table_leg4    pos=(-0.1933,-0.1777,+0.0150)  |v|=0.00001
+
+=== VERDICT ===
+  [PASS] square_table_top     z=+0.0157m |v|=0.00000 drift60=0.00000 finite=True above_floor=True
+  [PASS] square_table_leg1    z=+0.0156m |v|=0.00003 drift60=0.00000 finite=True above_floor=True
+  [PASS] square_table_leg2    z=+0.0154m |v|=0.00023 drift60=0.00000 finite=True above_floor=True
+  [PASS] square_table_leg3    z=+0.0563m |v|=0.00228 drift60=0.00002 finite=True above_floor=True
+  [PASS] square_table_leg4    z=+0.0150m |v|=0.00001 drift60=0.00000 finite=True above_floor=True
+
+PIPELINE: PASS
