@@ -210,3 +210,55 @@ behaves differently is untested.
 MimicGen's `SubTaskConfig.num_fixed_steps` is a dwell — but at the *start* of each subtask, and every
 shipped Franka stack config sets it to 0. The dwell that matters is before each gripper transition.
 Candidate patch: a `num_settle_steps_before_gripper` option (or convergence-gated gripper actions).
+
+## Group F — phase 2/3: second scene draw, approach-phase freeze, production point, convergence gate (2026-09-03)
+
+Runners `run_contact_hold_phase2.sh` / `run_contact_hold_phase3.sh`; same harness as groups D/E;
+outputs preserved with group E under `datasets/arc_sweep_diagnosis_runs/contact_hold/`. "draw 2" is
+`RESEED_BASE=2000000`, a different fixed scene sequence; everything else is draw 1 and pairable with
+group E. Geometry columns are median/p90 in cm (source demos: grasp reach 0.56, release xy 0.90).
+
+| run | arc | freeze | hold before gripper | scenes | result | grasp reach | release xy | len |
+|---|---|---|---|---|---|---|---|---|
+| `ref_none` (E) | 0.5 cm | 0.3 | — | draw 1 | 32.3% | 1.12 / 2.08 | 1.37 / 4.68 | 230 |
+| `ref_hold` (E) | 0.5 cm | 0.3 | fixed 20 | draw 1 | 50.3% | 0.84 / 1.66 | 0.92 / 1.70 | 310 |
+| `s2_ref_hold` | 0.5 cm | 0.3 | fixed 20 | **draw 2** | 55.3% | 0.84 / 1.66 | 0.95 / 1.83 | 310 |
+| `fz_ref_hold` | 0.5 cm | **0.5** | fixed 20 | draw 1 | 51.3% | 0.84 / 1.63 | 0.90 / 1.62 | 310 |
+| `gt_ref` | 0.5 cm | 0.3 | **gated** ≤ 40 | draw 1 | **55.0%** | 0.79 / 1.72 | 0.85 / 1.57 | 302 |
+| `arc_none` (E) | 3.0 cm | 0.3 | — | draw 1 | 15.7% | 1.42 / 3.07 | 2.01 / 9.54 | 230 |
+| `arc_hold` (E) | 3.0 cm | 0.3 | fixed 20 | draw 1 | 39.0% | 0.85 / 1.99 | 1.17 / 5.34 | 310 |
+| `s2_arc_hold` | 3.0 cm | 0.3 | fixed 20 | **draw 2** | 40.3% | 0.89 / 1.86 | 1.16 / 5.15 | 310 |
+| `gt_arc` | 3.0 cm | 0.3 | **gated** ≤ 40 | draw 1 | 44.0% | 0.85 / 2.31 | 1.15 / 6.98 | 309 |
+| `fz_arc_hold` | 3.0 cm | **0.5** | fixed 20 | draw 1 | **49.7%** | 0.84 / 1.66 | 0.93 / 1.73 | 310 |
+| `op_arc_hold` | **1.2 cm** | 0.3 | fixed 20 | draw 1 | **50.0%** | 0.83 / 1.64 | 0.91 / 1.78 | 310 |
+
+Gate statistics (from the hits files): `gt_ref` 1215 gates, mean 17.8 frames, p90 40, 18.8% reached the
+40-frame cap without getting inside 0.3 cm; `gt_arc` 1217 gates, mean 19.5, 21.4% at the cap.
+
+### Readings
+
+- **Robust to the scene draw.** The hold's effect reproduces on a second sequence of scenes
+  (50.3 → 55.3%, 39.0 → 40.3%).
+- **Gating beats a fixed 20-frame hold by ~5 pp at both amplitudes** at the same average length.
+  One gate in five hits the cap without converging to 0.3 cm — most plausibly at releases, where the
+  held target sits against the cube below and the last millimetres are not reachable; a looser or
+  event-specific tolerance has not been tried.
+- **The residual arc penalty is an approach-phase effect, and freezing more of the approach removes
+  it.** With the arc frozen over the last 50% of each subtask instead of 30%, 3.0 cm arc + hold reaches
+  49.7% — indistinguishable from the reference + hold — and the release tail (p90 5.34 → 1.73 cm)
+  is gone. The gate alone at freeze 0.3 leaves that tail in place (6.98). Cost: the path-integrated
+  perturbation falls by about 30% at the same 3.0 cm peak.
+- **Production point.** 1.2 cm + fixed hold 20 gives 50.0%, against 34.1% for the v1 production run
+  at 1.2 cm without the hold (visuomotor task) and 33.3% in the v2 sweep.
+
+### Recommended combination on this evidence
+
+Arc on the free segment (freeze 0.5 for peaks up to 3.0 cm, or freeze 0.3 at 1.2 cm) plus a
+convergence-gated, noise-free hold before every gripper transition (0.3 cm / ≤ 40 steps). Expected
+yield 50–55%, against 32% for stock MimicGen on this task. Not yet run: gate + freeze 0.5 together;
+gate at 1.2 cm; a tolerance/cap sweep; a second scene draw for the gate.
+
+### Caveats
+
+n = 300 per cell, one generation seed per draw, episodes 30–35% longer, and no test yet of what a
+policy trained on held data does at deployment.
