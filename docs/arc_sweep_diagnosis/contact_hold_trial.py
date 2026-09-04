@@ -77,6 +77,7 @@ HOLD = int(os.environ.get("HOLD", "20"))
 RAMP = int(os.environ.get("RAMP", "10"))
 REF_TABLE = os.environ.get("REF_TABLE", "")
 HITS_FILE = os.environ.get("HITS_FILE", "")
+CMD_DIR = os.environ.get("CMD_DIR", "")   # if set, dump each subtask's commanded path (unperturbed + perturbed)
 GATE_TOL = float(os.environ.get("GATE_TOL", "0.003"))   # metres; gate_target releases below this
 GATE_MAX = int(os.environ.get("GATE_MAX", "40"))         # frames; gate_target gives up after this many
 CUBES = ("cube_1", "cube_2", "cube_3")
@@ -98,8 +99,43 @@ def install_contact_fix():
     state = {
         "in_subtask": False, "env": None, "subtask": 0, "row": {},
         "hits": 0, "misses": 0, "applied": 0, "no_transition": 0, "nearest": float("nan"),
-        "gate_holds": [],
+        "gate_holds": [], "layout": {}, "unperturbed": None, "cmd_count": 0,
     }
+
+    if CMD_DIR:
+        # Commanded-path dump, for measuring the arc the arm actually traces against the path it was
+        # given. The object-centric transform's output is the unperturbed command; whatever reaches
+        # from_poses is the perturbed one. Logging only; wrapped so it can never take a run down.
+        os.makedirs(CMD_DIR, exist_ok=True)
+        orig_transform = dg.transform_source_data_segment_using_object_pose
+
+        def logged_transform(obj_pose, src_eef_poses, src_obj_pose):
+            out = orig_transform(obj_pose, src_eef_poses, src_obj_pose)
+            try:
+                state["unperturbed"] = out[:, :3, 3].detach().cpu().numpy().astype(np.float32)
+            except Exception as e:  # noqa: BLE001
+                print(f"[contact] cmd logging (transform) failed: {e}")
+            return out
+
+        dg.transform_source_data_segment_using_object_pose = logged_transform
+
+    def dump_cmd(poses):
+        if not CMD_DIR:
+            return
+        try:
+            layout = state["layout"].get(state["env"])
+            unp = state["unperturbed"]
+            if layout is None or unp is None:
+                return
+            n = state["cmd_count"]
+            state["cmd_count"] += 1
+            np.savez(
+                os.path.join(CMD_DIR, f"{n:06d}.npz"), key=layout, env=state["env"], subtask=state["subtask"],
+                unperturbed=unp, perturbed=poses[:, :3, 3].detach().cpu().numpy().astype(np.float32),
+            )
+            state["unperturbed"] = None
+        except Exception as e:  # noqa: BLE001
+            print(f"[contact] cmd logging (dump) failed: {e}")
 
     def write_counters():
         if HITS_FILE:
@@ -115,13 +151,17 @@ def install_contact_fix():
                 )
 
     def wrapped_method(self, env_id, eef_name, subtask_ind, *a, **kw):
-        if subtask_ind == 0 and table_keys is not None:
-            # Match by what is on the table, in the env-local frame the recorder writes (root_pos_w
-            # carries the environment's grid origin; subtracting it is what fixed the d2c runs).
+        if subtask_ind == 0:
+            # The scene layout in the env-local frame the recorder writes (root_pos_w carries the
+            # environment's grid origin; subtracting it is what fixed the d2c runs). Used as the key
+            # for the reference lookup and for the commanded-path dump.
             origin = self.env.scene.env_origins[env_id]
             layout = np.concatenate(
                 [(self.env.scene[c].data.root_pos_w[env_id] - origin).detach().cpu().numpy() for c in CUBES]
             )
+            state["layout"][env_id] = layout
+        if subtask_ind == 0 and table_keys is not None:
+            layout = state["layout"][env_id]
             d = np.linalg.norm(table_keys - layout, axis=1)
             i = int(np.argmin(d))
             # Reseeding reproduces a layout to ~0.2 mm median / 1.4 mm p90; the nearest different
@@ -144,6 +184,8 @@ def install_contact_fix():
     def fixed_from_poses(cls, poses, gripper_actions, action_noise):
         # Only the subtask segment built inside generate_eef_subtask_trajectory is touched; the
         # one-pose init sequence and the interpolation frames built by merge() pass through.
+        if state["in_subtask"] and poses.shape[0] >= 2:
+            dump_cmd(poses)
         if not state["in_subtask"] or poses.shape[0] < 2 or MODE == "none":
             return orig_from_poses(cls, poses, gripper_actions, action_noise)
         T = poses.shape[0]

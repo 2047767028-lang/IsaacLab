@@ -23,7 +23,7 @@ run () {
   local tag="$1"; shift
   say "########## $tag ##########"
   rm -f "$OUT/$tag.hits"
-  env "$@" HITS_FILE="$OUT/$tag.hits" timeout 3600 "$PY" "$SCRIPTS/contact_hold_trial.py" \
+  env "$@" HITS_FILE="$OUT/$tag.hits" CMD_DIR="$OUT/cmd_$tag" timeout 3600 "$PY" "$SCRIPTS/contact_hold_trial.py" \
       --attempts "$ATTEMPTS" --num_envs 10 --headless --device "$DEVICE" \
       --input_file "$INPUT" --output_file "$OUT/ch_$tag.hdf5" > "$OUT/$tag.log" 2>&1
   say "  rc=$?  counters: $(cat "$OUT/$tag.hits" 2>/dev/null || echo n/a)"
