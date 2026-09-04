@@ -1,22 +1,24 @@
-"""How big is the arc the arm ACTUALLY traces, against the nominal PERTURB_ARC_STD?
+"""How big is the arc the arm ACTUALLY traces, against the command it was given?
 
 The arm executes ~15-20% of each commanded step, so a 10 cm commanded bump comes out smaller.
 "1.2 cm" was quoted as the perturbation for two versions before anyone integrated the envelope; this
-script reports the achieved deviation instead.
+script reports the achieved deviation instead, measured against the run's own commanded paths.
 
-The noise floor is read off by including a run with (almost) no arc among the arc tags: its
-deviation from the reference is what two runs with different noise realisations differ by anyway.
+Inputs: the run's dataset (ch_<tag>.hdf5 / ch_<tag>_failed.hdf5) and the commanded-path dump the
+trial script writes when CMD_DIR is set (<out>/cmd_<tag>/*.npz: per subtask, the object-centric
+transform's output = unperturbed command, and the sequence handed to from_poses = perturbed
+command, keyed by scene layout).
 
-Method: pair each arc episode with the 0 cm reference episode on the same scene (reseeded runs,
-layout match < 2 mm). Cut both into segments at the gripper transitions, resample each segment's
-eef path to 100 points of normalised time, and take |p_arc(u) - p_ref(u)|. The commanded free zone is
-the first 70% of the commanded segment; the recorded segment also contains the hold before the
-transition, so the free zone maps to roughly u < 0.6. Reported: the maximum deviation over u < 0.6
-(achieved peak), the mean over u < 0.6 (path-integrated), and the deviation at u = 0.95 (what is
-left when the gripper acts).
+Per subtask segment (achieved path between gripper transitions, first 6 frames skipped to leave out
+the interpolation bridge from the previous subtask), the deviation of every achieved point is its
+distance to the UNPERTURBED commanded polyline -- a spatial measure, so the arm's lag along the
+path does not count. Reported per run: commanded peak (perturbed vs unperturbed command),
+achieved peak and mean, the ratio, and the deviation left at the gripper transition. A 0 cm run
+gives the floor: what noise and tracking alone produce.
 
-usage: effective_amplitude.py <out_dir> <ref_tag> <arc_tag> [<arc_tag> ...]
+usage: effective_amplitude.py <out_dir> <tag> [<tag> ...]
 """
+import glob
 import os
 import sys
 
@@ -33,7 +35,30 @@ def transitions(grip):
     return np.where(np.diff(closed.astype(int)) != 0)[0] + 1
 
 
-def load(out, tag):
+def key_of(v):
+    return tuple(np.round(np.asarray(v, float), 3))
+
+
+def dist_to_polyline(pts, poly):
+    """pts (N,3), poly (M,3) -> (N,) distance to the closest polyline segment."""
+    a, b = poly[:-1], poly[1:]                         # (M-1, 3)
+    ab = b - a
+    ab2 = (ab * ab).sum(axis=1) + 1e-12
+    ap = pts[:, None, :] - a[None, :, :]               # (N, M-1, 3)
+    t = np.clip((ap * ab[None]).sum(axis=2) / ab2[None], 0.0, 1.0)
+    proj = a[None] + t[..., None] * ab[None]
+    return np.linalg.norm(pts[:, None, :] - proj, axis=2).min(axis=1)
+
+
+def load_cmds(out, tag):
+    cmds = {}
+    for f in sorted(glob.glob(os.path.join(out, f"cmd_{tag}", "*.npz"))):
+        z = np.load(f)
+        cmds.setdefault(key_of(z["key"]), []).append((int(z["subtask"]), z["unperturbed"], z["perturbed"]))
+    return cmds
+
+
+def load_eps(out, tag):
     eps = []
     for suffix, ok in (("", True), ("_failed", False)):
         p = os.path.join(out, f"ch_{tag}{suffix}.hdf5")
@@ -44,65 +69,49 @@ def load(out, tag):
                 d = f["data"][k]
                 ro = d["states"]["rigid_object"]
                 eps.append({
-                    "key": np.concatenate([ro[c]["root_pose"][0, :3] for c in CUBES]),
-                    "ok": ok,
-                    "p": d["obs/eef_pos"][:],
-                    "ev": transitions(d["obs/gripper_pos"][:]),
+                    "key": key_of(np.concatenate([ro[c]["root_pose"][0, :3] for c in CUBES])),
+                    "ok": ok, "p": d["obs/eef_pos"][:], "ev": transitions(d["obs/gripper_pos"][:]),
                 })
     return eps
 
 
-def resample(seg, n=100):
-    t = np.linspace(0, 1, len(seg))
-    u = np.linspace(0, 1, n)
-    return np.stack([np.interp(u, t, seg[:, i]) for i in range(3)], axis=1)
-
-
-def main(out, ref_tag, arc_tags):
-    ref = load(out, ref_tag)
-    keys = np.stack([e["key"] for e in ref])
-    nominal = {"gt_zero": 0.0, "gt_ref": 0.5, "gt_arc": 3.0, "big5": 5.0, "big8": 8.0, "big10": 10.0,
-               "op_arc_hold": 1.2, "arc_hold": 3.0}
-    print(f"reference {ref_tag}: {len(ref)} episodes")
-    print(f"  {'run':<10s} {'nominal':>8s} {'pairs':>6s} {'achieved peak (u<0.6)':>22s} {'mean over u<0.6':>16s} "
-          f"{'at u=0.95':>10s} {'peak/nominal':>13s}")
-    for tag in arc_tags:
-        arc = load(out, tag)
-        peak, mean, late = [], [], []
-        pairs = 0
-        for a in arc:
-            dist = np.linalg.norm(keys - a["key"], axis=1)
-            i = int(np.argmin(dist))
-            if dist[i] > 2e-3:
+def main(out, tags):
+    print(f"  {'run':<10s} {'episodes':>9s} {'cmd peak':>9s} {'achieved peak':>16s} {'achieved mean':>14s} "
+          f"{'ach/cmd':>8s} {'at contact':>11s}")
+    for tag in tags:
+        cmds = load_cmds(out, tag)
+        eps = load_eps(out, tag)
+        cmd_peak, ach_peak, ach_mean, at_contact = [], [], [], []
+        matched = 0
+        for e in eps:
+            recs = cmds.get(e["key"])
+            if not recs:
                 continue
-            r = ref[i]
-            nseg = min(len(a["ev"]), len(r["ev"]), 4)
-            if nseg < 1:
+            recs = sorted(recs, key=lambda r: r[0])[:4]
+            nseg = min(len(recs), len(e["ev"]))
+            if nseg == 0:
                 continue
-            pairs += 1
-            ba = [0] + list(a["ev"][:nseg])
-            br = [0] + list(r["ev"][:nseg])
+            matched += 1
+            bounds = [0] + list(e["ev"][:nseg])
             for s in range(nseg):
-                sa, sr = a["p"][ba[s]:ba[s + 1]], r["p"][br[s]:br[s + 1]]
-                if len(sa) < 5 or len(sr) < 5:
+                _, unp, per = recs[s]
+                seg = e["p"][bounds[s]:bounds[s + 1]]
+                if len(seg) < 12 or len(unp) < 2:
                     continue
-                diff = resample(sa) - resample(sr)                      # (100, 3)
-                # Action noise is zero-mean and decorrelates within a few frames; the arc is a
-                # single-direction bump spanning ~40 frames. A 9-sample moving average on the
-                # deviation vector suppresses the former and keeps the latter.
-                k = np.ones(9) / 9.0
-                diff = np.stack([np.convolve(diff[:, i], k, mode="same") for i in range(3)], axis=1)
-                dlt = np.linalg.norm(diff, axis=1) * 100
-                peak.append(dlt[:60].max())
-                mean.append(dlt[:60].mean())
-                late.append(dlt[95])
-        peak, mean, late = map(np.array, (peak, mean, late))
-        nom = nominal.get(tag, float("nan"))
-        ratio = np.median(peak) / nom if nom > 0 else float("nan")
-        print(f"  {tag:<10s} {nom:7.1f}cm {pairs:6d} {np.median(peak):9.2f} / p90 {np.percentile(peak, 90):5.2f} cm"
-              f" {np.median(mean):8.2f} / {np.percentile(mean, 90):5.2f} {np.median(late):9.2f} {ratio:12.2f}")
-    print("  (median / p90 over all paired segments; 'at u=0.95' is just before the gripper acts)")
+                cmd_peak.append(dist_to_polyline(per, unp).max() * 100)
+                dev = dist_to_polyline(seg[6:], unp) * 100
+                ach_peak.append(dev.max())
+                ach_mean.append(dev.mean())
+                at_contact.append(dev[-1])
+        if not ach_peak:
+            print(f"  {tag:<10s} {matched:9d}   (no matched segments)")
+            continue
+        cp, ap, am, ac = map(np.array, (cmd_peak, ach_peak, ach_mean, at_contact))
+        ratio = np.median(ap) / np.median(cp) if np.median(cp) > 0.05 else float("nan")
+        print(f"  {tag:<10s} {matched:9d} {np.median(cp):7.2f}cm {np.median(ap):7.2f} / p90 {np.percentile(ap, 90):5.2f}"
+              f" {np.median(am):7.2f} / {np.percentile(am, 90):5.2f} {ratio:8.2f} {np.median(ac):9.2f}cm")
+    print("  (cm; median / p90 over matched subtask segments; 'at contact' = deviation at the gripper transition)")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3:])
+    main(sys.argv[1], sys.argv[2:])
