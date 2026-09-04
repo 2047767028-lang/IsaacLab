@@ -390,3 +390,42 @@ approaches the object it interacts with. Design direction: keep the arc on the w
 make the bump's return complete before the 冻结段 (peak earlier via the unused v3
 `PERTURB_ARC_PEAK_FRAC`, freeze length growing with amplitude) so the 接近段 carries source-like
 lag and direction; acceptance metric = seat at grasp back near the 0 cm run's 0.61 cm.
+
+## Group I — end the bump's return before the frozen segment: early peak, longer freeze (2026-09-04)
+
+Runner `run_contact_hold_phase7.sh`. Arc on the whole trajectory, peak amplitude untouched; the
+envelope peak moved from 50% to 25% of the free zone (`PERTURB_ARC_PEAK_FRAC_MIN/MAX=0.25`, the v3
+knob's first use; dump check: peak at 17% of the segment, expected 17.5%), freeze 0.3 or 0.5;
+gate cap 60; isotropic; scene draw 1; 300 attempts each. Controls are group G's `big5` / `big10`
+(peak 0.5, freeze 0.3) and `gt_zero`.
+
+| run | arc | peak | freeze | seat at grasp (med / p90) | left at contact | achieved arc peak (med / p90) | cube_2 on cube_1 | success |
+|---|---|---|---|---|---|---|---|---|
+| `gt_zero` | 0 | — | 0.3 | 0.61 / 1.20 cm | 0.29 cm | 0 | 71.1% | **51.5%** |
+| `big5` | 5 cm | 0.5 | 0.3 | 0.85 / 2.91 | 0.64 | 1.88 / 3.52 | 46.0% | 26.0% |
+| `pk5` | 5 cm | **0.25** | 0.3 | **0.69 / 1.48** | 0.35 | 1.78 / 3.78 | 69.7% | **48.0%** |
+| `pk5f` | 5 cm | **0.25** | **0.5** | 0.68 / 1.29 | 0.31 | 1.47 / 3.40 | 71.7% | **51.0%** |
+| `big10` | 10 cm | 0.5 | 0.3 | 1.85 / 5.09 | 1.58 | 3.49 / 6.62 | 16.3% | 6.0% |
+| `pk10f` | 10 cm | **0.25** | **0.5** | **0.68 / 1.42** | 0.33 | **2.62 / 6.03** | 67.0% | **46.7%** |
+
+Carry slip and carry accelerations unchanged (0.16–0.23 cm; 1.34–1.36 cm/frame² max) — as in the
+group H addendum, the carry was never the problem. Gate statistics back to the 0 cm run's
+(mean hold 22.3–22.8 frames, 18–19% at the cap, against 28–32 frames and 26–30% for `big5`/`big10`).
+
+### Reading
+
+The acceptance metric lands: the seat at grasp returns to 0.68–0.69 cm (0 cm run 0.61) at both
+5 and 10 cm, the residual at contact to 0.31–0.35 cm (0.29), and the funnel to within 4 pp of the
+0 cm run at every stage. **Same achieved arc, yield restored**: `pk5` keeps 1.78 cm of achieved
+bump (against `big5`'s 1.88) at 48.0% instead of 26.0%; `pk10f` keeps 2.62 cm median / 6.0 cm p90
+at 46.7% instead of 6.0%. What changed is only *when* the command's return ends: at peak 0.25 the
+return spans ~75% of the free zone (≈30 frames at freeze 0.3), several tracker time constants,
+so the arm re-joins the nominal path before the frozen segment and enters the approach segment
+with source-like lag and direction. This is the user's principle of 2026-09-04 confirmed:
+perturb the whole trajectory, do not chase the perturbed target, converge before the frozen
+segment, freeze and settle at the end.
+
+### Not yet done
+
+Second scene draw; 8 cm and the peak position as a sweep (0.15 / 0.25 / 0.35); freeze 0.3 at
+10 cm (only 0.5 was run); the "stopped" gate criterion; direction priors; the training-side test.
