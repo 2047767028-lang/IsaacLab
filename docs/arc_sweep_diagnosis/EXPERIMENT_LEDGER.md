@@ -262,3 +262,59 @@ gate at 1.2 cm; a tolerance/cap sweep; a second scene draw for the gate.
 
 n = 300 per cell, one generation seed per draw, episodes 30–35% longer, and no test yet of what a
 policy trained on held data does at deployment.
+
+## Group G — amplitude sweep under the gated hold, with the arc the arm actually traces (2026-09-04)
+
+Runners `run_contact_hold_phase4.sh` (0/5/8/10 cm) and `run_contact_hold_phase5.sh` (1.2/3.0 cm
+re-run with the commanded-path dump); gate cap 60; freeze 0.3; isotropic directions; scene draw 1;
+300 attempts each. Commanded and achieved arcs from `effective_amplitude.py` (distance of the
+achieved path to the unperturbed command minus its distance to the perturbed command; the dump is
+the trial script's CMD_DIR). Funnel from `stage_funnel.py`.
+
+| nominal | commanded peak | **achieved peak** (median / p90) | achieved / commanded | left at contact | cube_2 on cube_1 | success |
+|---|---|---|---|---|---|---|
+| 0 cm | 0 | 0 | — | 0.29 cm | 71.1% | **51.5%** |
+| 1.2 cm | 1.16 cm | 0.59 / 1.03 | 0.51 | 0.34 | 69.3% | **51.7%** |
+| 3.0 cm | 2.79 cm | 1.24 / 2.36 | 0.45 | 0.43 | 61.3% | **41.0%** |
+| 5 cm | 4.35 cm | 1.88 / 3.52 | 0.43 | 0.64 | 46.0% | **26.0%** |
+| 8 cm | 6.87 cm | 2.86 / 5.32 | 0.42 | 1.36 | 27.0% | **9.7%** |
+| 10 cm | 8.34 cm | 3.49 / 6.62 | 0.42 | 1.58 | 16.3% | **6.0%** |
+
+Gate statistics: mean hold 21.7 / 22.2 / 24.6 / 28.4 / 31.4 / 31.9 frames; fraction reaching the
+60-step cap 18 / 19 / 22 / 26 / 30 / 30%. Raising the cap from 40 to 60 did not lower the fraction at
+0.5 cm (18.8 → 17.9%): those events are blocked, not slow.
+
+### The cause of the 42% (from code and data, `big_arc_cause.py`)
+
+- The command each step is `target − current` (metres) + noise, times `scale = 0.5`
+  (`stack_ik_rel_env_cfg.py:39`); the DLS IK turns that into a joint-position target and the PD
+  (`FRANKA_PANDA_HIGH_PD_CFG`, stiffness 400 / damping 80) realises part of it in one 50 ms control
+  step. Measured on subtask 0 against the perturbed command: achieved step along the error ≈ 0.11 ×
+  error for errors under 4 cm, sub-linear above (0.27 → 0.33 → 0.40 cm/frame for 1-2 / 2-4 / 4-8 cm
+  errors). **The loop is a first-order tracker with a time constant of about 10 frames.** A bump that
+  rises and falls within ~40 frames is attenuated to roughly 40-50% by such a tracker, independent
+  of its amplitude — which is what the constant 0.42-0.51 ratio says. Above 5 cm the demanded
+  lateral speed (~A/12 cm per frame on top of the path's own 0.5) also runs into the arm's practical
+  speed range (achieved steps p90 1.5 cm/frame, the same as in the source demos), hence the slight
+  fall in the ratio.
+- Not the cause: joint limits (recorded joint ranges are well inside the drive limits; the Isaac
+  Lab Franka's joint 4 runs to +2.4 rad, so the URDF table does not apply) and joint-velocity limits
+  (3-4% of free-zone frames above 90% of the limit at every amplitude).
+- Where the success goes: the first grasp holds up (99.7 → 87.7%); "cube_2 on cube_1" collapses
+  (71 → 16%). The cube's seat between the fingers at the first release goes 0.86 → 1.20 → 2.84 cm
+  (p90 13.5 cm at 10 cm: the cube has left the jaws). The damage is done during the carry, before
+  any hold, by the lateral acceleration the bump demands. A longer hold at the contact frame cannot
+  undo it, and the gate's residual at contact (1.4-1.6 cm at 8-10 cm) says the arm is arriving from
+  a state the hold cannot fully correct either.
+
+### What follows
+
+The bump is too **fast** for the loop, not too large. Amplitude at fixed duration buys ~0.42 of
+itself in achieved deviation and pays in placement. The levers the cause points at, none tested:
+(1) stretch the perturbed free zone in time so the bump lasts several time constants (a
+`PERTURB_ARC_STRETCH` resampling of the commanded segment); (2) raise the loop gain (`scale` 0.5 →
+1.0 was catastrophic without the hold, group A; untested with the gate protecting the contact);
+(3) keep the arc small on the carrying subtasks (1 and 3) where the cube can slip. Direction
+priors (upper hemisphere / human cone) remain untested; the offline geometry check
+(`big_arc_geometry.py`) found table penetration impossible on this task (the arm is 16-21 cm up at
+the envelope peak) and isotropic arcs newly grazing an uninvolved cube only 3-4% of the time.
