@@ -9,12 +9,14 @@ trial script writes when CMD_DIR is set (<out>/cmd_<tag>/*.npz: per subtask, the
 transform's output = unperturbed command, and the sequence handed to from_poses = perturbed
 command, keyed by scene layout).
 
-Per subtask segment (achieved path between gripper transitions, first 6 frames skipped to leave out
-the interpolation bridge from the previous subtask), the deviation of every achieved point is its
-distance to the UNPERTURBED commanded polyline -- a spatial measure, so the arm's lag along the
-path does not count. Reported per run: commanded peak (perturbed vs unperturbed command),
-achieved peak and mean, the ratio, and the deviation left at the gripper transition. A 0 cm run
-gives the floor: what noise and tracking alone produce.
+Per subtask segment (achieved path between gripper transitions, first 6 frames skipped), the
+achieved arc at each point is (distance to the UNPERTURBED commanded polyline) minus (distance to
+the PERTURBED one). Distances are spatial, so lag along the path does not count; and taking the
+difference cancels the tracking lag that dominates raw distances (the first subtask's command
+starts 17 cm from the arm and is bridged in 5 frames). On a 0 cm run the two commands coincide and
+the measure is identically zero. Reported per run: commanded peak (perturbed vs unperturbed
+command), achieved peak and mean, the ratio, and the raw distance to the unperturbed command left
+at the gripper transition.
 
 usage: effective_amplitude.py <out_dir> <tag> [<tag> ...]
 """
@@ -51,11 +53,18 @@ def dist_to_polyline(pts, poly):
 
 
 def load_cmds(out, tag):
-    cmds = {}
+    """Returns (keys array (K,9), list of per-key record lists)."""
+    keys, recs = [], []
+    index = {}
     for f in sorted(glob.glob(os.path.join(out, f"cmd_{tag}", "*.npz"))):
         z = np.load(f)
-        cmds.setdefault(key_of(z["key"]), []).append((int(z["subtask"]), z["unperturbed"], z["perturbed"]))
-    return cmds
+        k = key_of(z["key"])
+        if k not in index:
+            index[k] = len(keys)
+            keys.append(np.asarray(z["key"], float))
+            recs.append([])
+        recs[index[k]].append((int(z["subtask"]), z["unperturbed"], z["perturbed"]))
+    return np.stack(keys) if keys else np.zeros((0, 9)), recs
 
 
 def load_eps(out, tag):
@@ -69,7 +78,7 @@ def load_eps(out, tag):
                 d = f["data"][k]
                 ro = d["states"]["rigid_object"]
                 eps.append({
-                    "key": key_of(np.concatenate([ro[c]["root_pose"][0, :3] for c in CUBES])),
+                    "key": np.concatenate([ro[c]["root_pose"][0, :3] for c in CUBES]).astype(float),
                     "ok": ok, "p": d["obs/eef_pos"][:], "ev": transitions(d["obs/gripper_pos"][:]),
                 })
     return eps
@@ -79,15 +88,18 @@ def main(out, tags):
     print(f"  {'run':<10s} {'episodes':>9s} {'cmd peak':>9s} {'achieved peak':>16s} {'achieved mean':>14s} "
           f"{'ach/cmd':>8s} {'at contact':>11s}")
     for tag in tags:
-        cmds = load_cmds(out, tag)
+        keys, all_recs = load_cmds(out, tag)
         eps = load_eps(out, tag)
         cmd_peak, ach_peak, ach_mean, at_contact = [], [], [], []
         matched = 0
         for e in eps:
-            recs = cmds.get(e["key"])
-            if not recs:
+            if len(keys) == 0:
+                break
+            dist = np.linalg.norm(keys - e["key"], axis=1)
+            i = int(np.argmin(dist))
+            if dist[i] > 2e-3:
                 continue
-            recs = sorted(recs, key=lambda r: r[0])[:4]
+            recs = sorted(all_recs[i], key=lambda r: r[0])[:4]
             nseg = min(len(recs), len(e["ev"]))
             if nseg == 0:
                 continue
@@ -99,10 +111,18 @@ def main(out, tags):
                 if len(seg) < 12 or len(unp) < 2:
                     continue
                 cmd_peak.append(dist_to_polyline(per, unp).max() * 100)
-                dev = dist_to_polyline(seg[6:], unp) * 100
-                ach_peak.append(dev.max())
-                ach_mean.append(dev.mean())
-                at_contact.append(dev[-1])
+                # The arm trails its command by up to ~18 cm right after the interpolation bridge
+                # into the segment, so the raw distance to the unperturbed command is dominated by
+                # lag, not by the arc (11.8 cm median on a 0 cm run). The arc is what the distance
+                # to the unperturbed command exceeds the distance to the perturbed command by:
+                # identically zero when the two commands coincide, and equal to the bump where the
+                # arm follows it.
+                d_unp = dist_to_polyline(seg[6:], unp) * 100
+                d_per = dist_to_polyline(seg[6:], per) * 100
+                excess = d_unp - d_per
+                ach_peak.append(excess.max())
+                ach_mean.append(excess.mean())
+                at_contact.append(d_unp[-1])
         if not ach_peak:
             print(f"  {tag:<10s} {matched:9d}   (no matched segments)")
             continue
