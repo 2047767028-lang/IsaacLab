@@ -429,3 +429,21 @@ segment, freeze and settle at the end.
 
 Second scene draw; 8 cm and the peak position as a sweep (0.15 / 0.25 / 0.35); freeze 0.3 at
 10 cm (only 0.5 was run); the "stopped" gate criterion; direction priors; the training-side test.
+
+### Group I addendum — what the freeze fraction still buys once the peak is early (`run_contact_hold_phase8.sh`)
+
+| run | arc | peak | freeze | seat at grasp | at contact | achieved arc (med / p90) | cube_2 on cube_1 | success |
+|---|---|---|---|---|---|---|---|---|
+| `big10` | 10 cm | 0.5 | 0.3 | 1.85 / 5.09 | 1.58 | 3.49 / 6.62 | 16.3% | 6.0% |
+| `pk10` | 10 cm | 0.25 | 0.3 | 0.81 / 2.95 | 0.53 | 3.30 / 6.19 | 51.7% | **31.0%** |
+| `pk10f` | 10 cm | 0.25 | 0.5 | 0.68 / 1.42 | 0.33 | 2.62 / 6.03 | 67.0% | **46.7%** |
+
+At 5 cm the freeze fraction added 3 pp on top of the early peak (48.0 → 51.0%); at 10 cm it adds
+15.7 pp (31.0 → 46.7%). The two knobs are the same lever — time for the arm to re-join the nominal
+path before the frozen segment — and the time needed grows with the achieved excursion: at 10 cm
+the early peak alone leaves 0.81 cm of seat (p90 2.95) and 0.53 cm at contact, freeze 0.5 brings
+both back to the 0 cm run's level. Freeze 0.5 also trims the achieved arc (3.30 → 2.62 cm median),
+so part of its gain is smaller excursion; separating the two needs a peak-position sweep at
+freeze 0.3 (0.15 / 0.25 / 0.35), not run. For the record, the freeze fraction did nothing without
+an arc to return from (0.5 cm, group F: 50.3 → 51.3%); what lifted stock MimicGen was the
+contact-frame hold, not the freeze fraction.
