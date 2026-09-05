@@ -47,10 +47,10 @@
 
 ## 怎么在这个工作区继续干活（2026-09-04）
 
-- **在哪**：worktree `/home/pk/IsaacLab/.claude/worktrees/mainline2-2026-09-02`，分支
-  `worktree-mainline2-2026-09-02`（已推到 fork `2047767028-lang/IsaacLab`）。新 session 在这个目录里启动，
+- **在哪**：worktree `/home/pk/IsaacLab/~/IsaacLab-ml2`，分支
+  `mainline2-arc`（已推到 fork `2047767028-lang/IsaacLab`）。新 session 在这个目录里启动，
   读到的 CLAUDE.md 才是最新的（主检出 `/home/pk/IsaacLab` 的 CLAUDE.md 停在 9/2）。worktree 若被清理：
-  `git worktree add .claude/worktrees/mainline2-2026-09-02 worktree-mainline2-2026-09-02`。
+  `git worktree add ~/IsaacLab-ml2 mainline2-arc`。
 - **环境**：conda `isaaclab`（Isaac Lab 2.3.2），`PY=/home/pk/miniconda3/envs/isaaclab/bin/python`；
   本机 RTX 4080 12GB，`num_envs=10` 一组 300 次约 7~14 分钟；跑之前 `nvidia-smi` 确认卡是空的。
 - **跑一组**：照 `docs/arc_sweep_diagnosis/run_contact_hold_phase7.sh` 的写法（`setsid nohup ... &` 启动，
