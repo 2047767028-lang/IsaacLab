@@ -448,3 +448,26 @@ so part of its gain is smaller excursion; separating the two needs a peak-positi
 freeze 0.3 (0.15 / 0.25 / 0.35), not run. For the record, the freeze fraction did nothing without
 an arc to return from (0.5 cm, group F: 50.3 → 51.3%); what lifted stock MimicGen was the
 contact-frame hold, not the freeze fraction.
+
+### Group I addendum 2 — peak position sweep at 10 cm, freeze 0.3 (`run_contact_hold_phase9.sh`)
+
+| run | peak | seat at grasp | at contact | achieved arc (med / p90) | cube_2 on cube_1 | success |
+|---|---|---|---|---|---|---|
+| `big10` | 0.50 | 1.85 / 5.09 | 1.58 | 3.49 / 6.62 | 16.3% | 6.0% |
+| `pk10_p35` | 0.35 | 1.05 / 4.25 | 0.68 | 3.44 / 6.43 | 36.0% | 14.7% |
+| `pk10` | 0.25 | 0.81 / 2.95 | 0.53 | 3.30 / 6.19 | 51.7% | 31.0% |
+| `pk10_p17` | 0.17 (floor of the a>1 family) | 0.73 / 1.58 | 0.36 | 3.01 / 6.36 | 60.0% | 38.0% |
+| `pk10f` (freeze 0.5, peak 0.25) | — | 0.68 / 1.42 | 0.33 | 2.62 / 6.03 | 67.0% | 46.7% |
+
+Monotone in the peak position: the earlier the return ends, the closer the seat at grasp and the
+residual at contact get to the 0 cm run (0.61 / 0.29) and the higher the yield, at nearly the
+same achieved arc (3.0–3.5 cm median, 6.0–6.6 p90). Return time is the lever. At 10 cm the earliest
+peak the envelope family allows (return over ~83% of a 42-frame free zone) still leaves 0.36 cm at
+contact and 38.0%; freeze 0.5 with peak 0.25 (return over ~22 frames plus 30 unperturbed frames)
+reaches 46.7% — the return plus run-in needs about 40+ frames for a ~3 cm achieved excursion.
+
+Also measured for the record (per-segment spread, 10 cm): commanded peak 8.1–8.2 ± 1.7 cm,
+achieved 3.2–3.4 ± 2.2 cm; per episode the largest of its four segments is 5.2–5.8 cm median.
+The nominal→commanded gap (10 → ~8.3) is the isotropic direction's along-path component, which
+the perpendicular-distance measure does not see; sampling the direction in the path's normal plane
+would remove it (two lines in `_apply_arc_perturbation`, not done).
