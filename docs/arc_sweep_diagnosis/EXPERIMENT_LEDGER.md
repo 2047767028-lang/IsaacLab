@@ -1,6 +1,7 @@
 # Experiment ledger — every generation run, and which ones may be compared
 
-Twenty-six runs across six batches. They are **not** mutually comparable: two harness settings move
+Fifty-one runs across fifteen batches (groups A–D from the first thread, E–I from the contact-frame
+hold study of 2026-09-02..04). They are **not** all mutually comparable: two harness settings move
 the absolute success rate more than most of the interventions do.
 
 ## Read this first: the comparability trap

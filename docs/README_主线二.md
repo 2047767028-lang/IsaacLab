@@ -43,3 +43,24 @@
   = 闭合时偏心回到 0.61cm。术语：抓取段/搬运段/冻结段/接近段。
 - **2026-09-04 深夜验证**（CLAUDE.md 2.18，台账 Group I）：峰值提前到 25% 后，5cm 48~51%、10cm 46.7%
   （对照 26% / 6%，无扰动 51.5%），实际弧线不变，闭合偏心 0.68cm。原则成立。
+
+
+## 怎么在这个工作区继续干活（2026-09-04）
+
+- **在哪**：worktree `/home/pk/IsaacLab/.claude/worktrees/mainline2-2026-09-02`，分支
+  `worktree-mainline2-2026-09-02`（已推到 fork `2047767028-lang/IsaacLab`）。新 session 在这个目录里启动，
+  读到的 CLAUDE.md 才是最新的（主检出 `/home/pk/IsaacLab` 的 CLAUDE.md 停在 9/2）。worktree 若被清理：
+  `git worktree add .claude/worktrees/mainline2-2026-09-02 worktree-mainline2-2026-09-02`。
+- **环境**：conda `isaaclab`（Isaac Lab 2.3.2），`PY=/home/pk/miniconda3/envs/isaaclab/bin/python`；
+  本机 RTX 4080 12GB，`num_envs=10` 一组 300 次约 7~14 分钟；跑之前 `nvidia-smi` 确认卡是空的。
+- **跑一组**：照 `docs/arc_sweep_diagnosis/run_contact_hold_phase7.sh` 的写法（`setsid nohup ... &` 启动，
+  日志里 `[时间] ####` 行是里程碑，`.hits` 文件是机制计数器）。试验脚本 `contact_hold_trial.py` 的旋钮：
+  `CONTACT_FIX`、`GATE_TOL/GATE_MAX`、`PERTURB_ARC_STD`、`PERTURB_ARC_FREEZE_FRAC`、
+  `PERTURB_ARC_PEAK_FRAC_MIN/MAX`、`PERTURB_ARC_STRETCH`、`RESEED_BASE`、`CMD_DIR`。
+- **看结果**（都接 `<out_dir> <tag>...`）：`stage_funnel.py`（分阶段漏斗）、`seat_grasp_vs_release.py`
+  （验收指标：闭合时偏心）、`effective_amplitude.py`（实际弧线，需要 CMD_DIR 日志）、
+  `contact_hold_analysis.py`（接触几何 + 门控）、`big_arc_cause.py` / `arc_direction_dependence.py`（机制）。
+- **数据**：`datasets/arc_sweep_diagnosis_runs/contact_hold/`（25 组，含 hdf5 / 日志 / hits / cmd 日志，不进
+  git）；旧 job 的 26 组在上一级目录。源演示 `datasets/annotated_dataset.hdf5`。
+- **服务器**（`surf2@192.168.3.254`，需有线口 `enp109s0` 在线、用 `ssh -b 192.168.3.123`）：9/2 那次
+  mixed 第二种子续训的状态一直没查到，pipeline 日志在 `~/dev/mimic_enhance/isaac_downloads/logs/`。
