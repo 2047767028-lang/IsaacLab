@@ -1,0 +1,2425 @@
+{
+  "task": "Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-v0",
+  "seed": 101,
+  "reset_joint_std": 0.0,
+  "horizon": 400,
+  "prompt": "stack the cubes",
+  "policy_port": 8123,
+  "n_trials": 300,
+  "n_success": 243,
+  "success_rate": 0.81,
+  "ci_low": 0.7617952561979654,
+  "ci_high": 0.8503658172034386,
+  "ci_halfwidth": 0.04428528050273661,
+  "outcome_counts": {
+    "success": 243,
+    "horizon_exhausted": 57
+  },
+  "mean_steps_success": 245.4,
+  "mean_steps_failure": 400.0,
+  "mean_wall_seconds": 42.7,
+  "total_wall_seconds": 12808.9,
+  "infer_fraction": 0.5415751284657652,
+  "records": [
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 42.75,
+      "infer_seconds": 25.65,
+      "trial": 0
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 285,
+      "wall_seconds": 45.03,
+      "infer_seconds": 24.2,
+      "trial": 1
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.76,
+      "infer_seconds": 33.43,
+      "trial": 2
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 38.26,
+      "infer_seconds": 20.8,
+      "trial": 3
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 33.61,
+      "infer_seconds": 18.44,
+      "trial": 4
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.77,
+      "infer_seconds": 33.75,
+      "trial": 5
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 378,
+      "wall_seconds": 58.59,
+      "infer_seconds": 31.8,
+      "trial": 6
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.82,
+      "infer_seconds": 33.45,
+      "trial": 7
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 230,
+      "wall_seconds": 35.83,
+      "infer_seconds": 19.3,
+      "trial": 8
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 248,
+      "wall_seconds": 38.56,
+      "infer_seconds": 20.9,
+      "trial": 9
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.69,
+      "infer_seconds": 19.87,
+      "trial": 10
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.0,
+      "infer_seconds": 33.39,
+      "trial": 11
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 204,
+      "wall_seconds": 31.19,
+      "infer_seconds": 16.84,
+      "trial": 12
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 240,
+      "wall_seconds": 37.57,
+      "infer_seconds": 20.34,
+      "trial": 13
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 249,
+      "wall_seconds": 39.2,
+      "infer_seconds": 21.07,
+      "trial": 14
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 209,
+      "wall_seconds": 32.33,
+      "infer_seconds": 17.68,
+      "trial": 15
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 225,
+      "wall_seconds": 36.01,
+      "infer_seconds": 19.92,
+      "trial": 16
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 40.94,
+      "infer_seconds": 22.69,
+      "trial": 17
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 291,
+      "wall_seconds": 47.37,
+      "infer_seconds": 26.43,
+      "trial": 18
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 224,
+      "wall_seconds": 37.03,
+      "infer_seconds": 21.06,
+      "trial": 19
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 63.33,
+      "infer_seconds": 35.01,
+      "trial": 20
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 211,
+      "wall_seconds": 32.53,
+      "infer_seconds": 17.63,
+      "trial": 21
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 255,
+      "wall_seconds": 39.44,
+      "infer_seconds": 21.28,
+      "trial": 22
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.16,
+      "infer_seconds": 18.61,
+      "trial": 23
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 63.02,
+      "infer_seconds": 34.63,
+      "trial": 24
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.94,
+      "infer_seconds": 32.87,
+      "trial": 25
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 236,
+      "wall_seconds": 36.41,
+      "infer_seconds": 19.64,
+      "trial": 26
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 223,
+      "wall_seconds": 34.73,
+      "infer_seconds": 18.78,
+      "trial": 27
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 229,
+      "wall_seconds": 35.84,
+      "infer_seconds": 19.33,
+      "trial": 28
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 261,
+      "wall_seconds": 40.65,
+      "infer_seconds": 22.06,
+      "trial": 29
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 35.53,
+      "infer_seconds": 19.1,
+      "trial": 30
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 220,
+      "wall_seconds": 34.61,
+      "infer_seconds": 18.5,
+      "trial": 31
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 234,
+      "wall_seconds": 35.98,
+      "infer_seconds": 19.75,
+      "trial": 32
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 236,
+      "wall_seconds": 36.34,
+      "infer_seconds": 19.94,
+      "trial": 33
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 298,
+      "wall_seconds": 46.25,
+      "infer_seconds": 25.21,
+      "trial": 34
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.33,
+      "infer_seconds": 33.93,
+      "trial": 35
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 39.5,
+      "infer_seconds": 21.18,
+      "trial": 36
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.35,
+      "infer_seconds": 18.56,
+      "trial": 37
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 35.71,
+      "infer_seconds": 19.44,
+      "trial": 38
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.44,
+      "infer_seconds": 19.71,
+      "trial": 39
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 199,
+      "wall_seconds": 30.85,
+      "infer_seconds": 16.67,
+      "trial": 40
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 34.92,
+      "infer_seconds": 18.93,
+      "trial": 41
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 294,
+      "wall_seconds": 43.89,
+      "infer_seconds": 24.38,
+      "trial": 42
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 221,
+      "wall_seconds": 33.99,
+      "infer_seconds": 18.56,
+      "trial": 43
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 221,
+      "wall_seconds": 33.4,
+      "infer_seconds": 18.48,
+      "trial": 44
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.92,
+      "infer_seconds": 20.01,
+      "trial": 45
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 248,
+      "wall_seconds": 38.35,
+      "infer_seconds": 20.74,
+      "trial": 46
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 209,
+      "wall_seconds": 31.68,
+      "infer_seconds": 17.49,
+      "trial": 47
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.45,
+      "infer_seconds": 19.74,
+      "trial": 48
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 246,
+      "wall_seconds": 37.99,
+      "infer_seconds": 20.62,
+      "trial": 49
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.63,
+      "infer_seconds": 19.86,
+      "trial": 50
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 309,
+      "wall_seconds": 48.08,
+      "infer_seconds": 25.9,
+      "trial": 51
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 250,
+      "wall_seconds": 38.5,
+      "infer_seconds": 20.92,
+      "trial": 52
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 215,
+      "wall_seconds": 33.23,
+      "infer_seconds": 18.03,
+      "trial": 53
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.28,
+      "infer_seconds": 33.7,
+      "trial": 54
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 340,
+      "wall_seconds": 52.84,
+      "infer_seconds": 28.53,
+      "trial": 55
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 206,
+      "wall_seconds": 31.95,
+      "infer_seconds": 17.24,
+      "trial": 56
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 220,
+      "wall_seconds": 32.74,
+      "infer_seconds": 18.38,
+      "trial": 57
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 209,
+      "wall_seconds": 30.93,
+      "infer_seconds": 17.54,
+      "trial": 58
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 59.73,
+      "infer_seconds": 33.61,
+      "trial": 59
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 227,
+      "wall_seconds": 35.31,
+      "infer_seconds": 19.14,
+      "trial": 60
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 236,
+      "wall_seconds": 35.85,
+      "infer_seconds": 19.5,
+      "trial": 61
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.62,
+      "infer_seconds": 32.36,
+      "trial": 62
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 35.38,
+      "infer_seconds": 19.13,
+      "trial": 63
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 245,
+      "wall_seconds": 37.82,
+      "infer_seconds": 20.47,
+      "trial": 64
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 220,
+      "wall_seconds": 34.17,
+      "infer_seconds": 18.5,
+      "trial": 65
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 38.99,
+      "infer_seconds": 21.11,
+      "trial": 66
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 322,
+      "wall_seconds": 50.01,
+      "infer_seconds": 27.06,
+      "trial": 67
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 35.28,
+      "infer_seconds": 19.01,
+      "trial": 68
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 225,
+      "wall_seconds": 34.94,
+      "infer_seconds": 18.92,
+      "trial": 69
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 39.34,
+      "infer_seconds": 21.33,
+      "trial": 70
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 199,
+      "wall_seconds": 31.01,
+      "infer_seconds": 16.74,
+      "trial": 71
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.63,
+      "infer_seconds": 33.46,
+      "trial": 72
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 252,
+      "wall_seconds": 38.78,
+      "infer_seconds": 21.13,
+      "trial": 73
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 257,
+      "wall_seconds": 39.8,
+      "infer_seconds": 21.61,
+      "trial": 74
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 246,
+      "wall_seconds": 38.11,
+      "infer_seconds": 20.68,
+      "trial": 75
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.56,
+      "infer_seconds": 33.28,
+      "trial": 76
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.17,
+      "infer_seconds": 18.52,
+      "trial": 77
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.39,
+      "infer_seconds": 19.79,
+      "trial": 78
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 210,
+      "wall_seconds": 32.4,
+      "infer_seconds": 17.46,
+      "trial": 79
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.83,
+      "infer_seconds": 33.51,
+      "trial": 80
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.14,
+      "infer_seconds": 33.6,
+      "trial": 81
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 264,
+      "wall_seconds": 40.82,
+      "infer_seconds": 22.2,
+      "trial": 82
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 249,
+      "wall_seconds": 38.58,
+      "infer_seconds": 20.94,
+      "trial": 83
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 276,
+      "wall_seconds": 42.97,
+      "infer_seconds": 23.2,
+      "trial": 84
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 34.78,
+      "infer_seconds": 18.99,
+      "trial": 85
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.81,
+      "infer_seconds": 19.92,
+      "trial": 86
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.51,
+      "infer_seconds": 18.65,
+      "trial": 87
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 39.34,
+      "infer_seconds": 21.26,
+      "trial": 88
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 262,
+      "wall_seconds": 40.57,
+      "infer_seconds": 21.95,
+      "trial": 89
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.06,
+      "infer_seconds": 33.61,
+      "trial": 90
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.03,
+      "infer_seconds": 33.79,
+      "trial": 91
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 259,
+      "wall_seconds": 40.38,
+      "infer_seconds": 21.74,
+      "trial": 92
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 36.22,
+      "infer_seconds": 19.59,
+      "trial": 93
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 224,
+      "wall_seconds": 34.72,
+      "infer_seconds": 18.83,
+      "trial": 94
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 270,
+      "wall_seconds": 41.9,
+      "infer_seconds": 22.73,
+      "trial": 95
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 318,
+      "wall_seconds": 49.46,
+      "infer_seconds": 26.69,
+      "trial": 96
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 241,
+      "wall_seconds": 37.33,
+      "infer_seconds": 20.19,
+      "trial": 97
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.19,
+      "infer_seconds": 33.58,
+      "trial": 98
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 234,
+      "wall_seconds": 36.22,
+      "infer_seconds": 19.75,
+      "trial": 99
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.02,
+      "infer_seconds": 33.48,
+      "trial": 100
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 59.61,
+      "infer_seconds": 33.45,
+      "trial": 101
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.5,
+      "infer_seconds": 19.89,
+      "trial": 102
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 242,
+      "wall_seconds": 36.22,
+      "infer_seconds": 20.31,
+      "trial": 103
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 250,
+      "wall_seconds": 38.78,
+      "infer_seconds": 20.96,
+      "trial": 104
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.18,
+      "infer_seconds": 33.61,
+      "trial": 105
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 272,
+      "wall_seconds": 42.17,
+      "infer_seconds": 22.86,
+      "trial": 106
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 295,
+      "wall_seconds": 45.54,
+      "infer_seconds": 24.83,
+      "trial": 107
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 266,
+      "wall_seconds": 41.17,
+      "infer_seconds": 22.34,
+      "trial": 108
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 230,
+      "wall_seconds": 35.63,
+      "infer_seconds": 19.37,
+      "trial": 109
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 264,
+      "wall_seconds": 41.01,
+      "infer_seconds": 22.2,
+      "trial": 110
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 260,
+      "wall_seconds": 40.47,
+      "infer_seconds": 21.85,
+      "trial": 111
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.91,
+      "infer_seconds": 33.62,
+      "trial": 112
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 245,
+      "wall_seconds": 37.67,
+      "infer_seconds": 20.42,
+      "trial": 113
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.75,
+      "infer_seconds": 33.59,
+      "trial": 114
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 33.62,
+      "infer_seconds": 18.46,
+      "trial": 115
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 259,
+      "wall_seconds": 40.23,
+      "infer_seconds": 21.78,
+      "trial": 116
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 215,
+      "wall_seconds": 33.26,
+      "infer_seconds": 18.09,
+      "trial": 117
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.1,
+      "infer_seconds": 33.54,
+      "trial": 118
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 215,
+      "wall_seconds": 32.68,
+      "infer_seconds": 18.0,
+      "trial": 119
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 242,
+      "wall_seconds": 37.55,
+      "infer_seconds": 20.35,
+      "trial": 120
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.64,
+      "infer_seconds": 18.64,
+      "trial": 121
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 240,
+      "wall_seconds": 37.24,
+      "infer_seconds": 20.14,
+      "trial": 122
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 36.01,
+      "infer_seconds": 19.56,
+      "trial": 123
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 225,
+      "wall_seconds": 34.81,
+      "infer_seconds": 18.85,
+      "trial": 124
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 205,
+      "wall_seconds": 30.42,
+      "infer_seconds": 17.16,
+      "trial": 125
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 38.45,
+      "infer_seconds": 21.13,
+      "trial": 126
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 249,
+      "wall_seconds": 38.64,
+      "infer_seconds": 20.88,
+      "trial": 127
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 244,
+      "wall_seconds": 38.02,
+      "infer_seconds": 20.6,
+      "trial": 128
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 208,
+      "wall_seconds": 32.31,
+      "infer_seconds": 17.47,
+      "trial": 129
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 34.91,
+      "infer_seconds": 18.99,
+      "trial": 130
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 232,
+      "wall_seconds": 35.97,
+      "infer_seconds": 19.49,
+      "trial": 131
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 224,
+      "wall_seconds": 34.93,
+      "infer_seconds": 18.75,
+      "trial": 132
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 252,
+      "wall_seconds": 38.11,
+      "infer_seconds": 21.07,
+      "trial": 133
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 257,
+      "wall_seconds": 39.59,
+      "infer_seconds": 21.62,
+      "trial": 134
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 33.9,
+      "infer_seconds": 18.37,
+      "trial": 135
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.23,
+      "infer_seconds": 33.64,
+      "trial": 136
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 266,
+      "wall_seconds": 41.47,
+      "infer_seconds": 22.37,
+      "trial": 137
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 210,
+      "wall_seconds": 32.69,
+      "infer_seconds": 17.7,
+      "trial": 138
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 232,
+      "wall_seconds": 36.13,
+      "infer_seconds": 19.55,
+      "trial": 139
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 258,
+      "wall_seconds": 40.01,
+      "infer_seconds": 21.71,
+      "trial": 140
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 291,
+      "wall_seconds": 45.39,
+      "infer_seconds": 24.58,
+      "trial": 141
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 37.11,
+      "infer_seconds": 19.97,
+      "trial": 142
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 242,
+      "wall_seconds": 37.6,
+      "infer_seconds": 20.37,
+      "trial": 143
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 231,
+      "wall_seconds": 35.83,
+      "infer_seconds": 19.39,
+      "trial": 144
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 241,
+      "wall_seconds": 37.47,
+      "infer_seconds": 20.28,
+      "trial": 145
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 249,
+      "wall_seconds": 38.37,
+      "infer_seconds": 20.71,
+      "trial": 146
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 38.95,
+      "infer_seconds": 21.03,
+      "trial": 147
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 270,
+      "wall_seconds": 41.91,
+      "infer_seconds": 22.74,
+      "trial": 148
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 234,
+      "wall_seconds": 36.45,
+      "infer_seconds": 19.75,
+      "trial": 149
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 280,
+      "wall_seconds": 43.45,
+      "infer_seconds": 23.41,
+      "trial": 150
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 195,
+      "wall_seconds": 29.69,
+      "infer_seconds": 16.36,
+      "trial": 151
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 361,
+      "wall_seconds": 53.71,
+      "infer_seconds": 30.12,
+      "trial": 152
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 299,
+      "wall_seconds": 45.62,
+      "infer_seconds": 24.89,
+      "trial": 153
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 237,
+      "wall_seconds": 36.45,
+      "infer_seconds": 19.88,
+      "trial": 154
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.2,
+      "infer_seconds": 33.71,
+      "trial": 155
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 230,
+      "wall_seconds": 34.85,
+      "infer_seconds": 19.31,
+      "trial": 156
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 382,
+      "wall_seconds": 58.54,
+      "infer_seconds": 32.15,
+      "trial": 157
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.58,
+      "infer_seconds": 33.6,
+      "trial": 158
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 39.27,
+      "infer_seconds": 21.33,
+      "trial": 159
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.93,
+      "infer_seconds": 33.62,
+      "trial": 160
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.37,
+      "infer_seconds": 33.36,
+      "trial": 161
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.04,
+      "infer_seconds": 18.41,
+      "trial": 162
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.65,
+      "infer_seconds": 19.76,
+      "trial": 163
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 252,
+      "wall_seconds": 39.07,
+      "infer_seconds": 21.2,
+      "trial": 164
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 232,
+      "wall_seconds": 36.21,
+      "infer_seconds": 19.55,
+      "trial": 165
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 260,
+      "wall_seconds": 40.35,
+      "infer_seconds": 21.82,
+      "trial": 166
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 313,
+      "wall_seconds": 48.74,
+      "infer_seconds": 26.4,
+      "trial": 167
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 247,
+      "wall_seconds": 38.34,
+      "infer_seconds": 20.86,
+      "trial": 168
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.95,
+      "infer_seconds": 33.48,
+      "trial": 169
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 256,
+      "wall_seconds": 39.79,
+      "infer_seconds": 21.56,
+      "trial": 170
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.18,
+      "infer_seconds": 33.61,
+      "trial": 171
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 231,
+      "wall_seconds": 36.05,
+      "infer_seconds": 19.48,
+      "trial": 172
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 39.32,
+      "infer_seconds": 21.37,
+      "trial": 173
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 244,
+      "wall_seconds": 37.99,
+      "infer_seconds": 20.59,
+      "trial": 174
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 205,
+      "wall_seconds": 31.77,
+      "infer_seconds": 17.25,
+      "trial": 175
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 242,
+      "wall_seconds": 37.44,
+      "infer_seconds": 20.39,
+      "trial": 176
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.67,
+      "infer_seconds": 33.37,
+      "trial": 177
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 181,
+      "wall_seconds": 28.03,
+      "infer_seconds": 15.15,
+      "trial": 178
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 213,
+      "wall_seconds": 33.09,
+      "infer_seconds": 17.92,
+      "trial": 179
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 269,
+      "wall_seconds": 41.81,
+      "infer_seconds": 22.57,
+      "trial": 180
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 245,
+      "wall_seconds": 38.25,
+      "infer_seconds": 20.6,
+      "trial": 181
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 38.81,
+      "infer_seconds": 21.11,
+      "trial": 182
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 221,
+      "wall_seconds": 34.28,
+      "infer_seconds": 18.6,
+      "trial": 183
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.09,
+      "infer_seconds": 33.63,
+      "trial": 184
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 209,
+      "wall_seconds": 32.3,
+      "infer_seconds": 17.43,
+      "trial": 185
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 216,
+      "wall_seconds": 33.29,
+      "infer_seconds": 17.96,
+      "trial": 186
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 244,
+      "wall_seconds": 37.95,
+      "infer_seconds": 20.51,
+      "trial": 187
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.97,
+      "infer_seconds": 33.58,
+      "trial": 188
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 239,
+      "wall_seconds": 37.06,
+      "infer_seconds": 20.06,
+      "trial": 189
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.53,
+      "infer_seconds": 19.82,
+      "trial": 190
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.2,
+      "infer_seconds": 33.8,
+      "trial": 191
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.44,
+      "infer_seconds": 33.69,
+      "trial": 192
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 262,
+      "wall_seconds": 40.57,
+      "infer_seconds": 22.05,
+      "trial": 193
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 230,
+      "wall_seconds": 34.69,
+      "infer_seconds": 18.42,
+      "trial": 194
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.87,
+      "infer_seconds": 33.45,
+      "trial": 195
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.55,
+      "infer_seconds": 19.71,
+      "trial": 196
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 239,
+      "wall_seconds": 37.28,
+      "infer_seconds": 20.13,
+      "trial": 197
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 240,
+      "wall_seconds": 37.15,
+      "infer_seconds": 20.25,
+      "trial": 198
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 368,
+      "wall_seconds": 56.59,
+      "infer_seconds": 30.82,
+      "trial": 199
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 208,
+      "wall_seconds": 31.71,
+      "infer_seconds": 17.02,
+      "trial": 200
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 250,
+      "wall_seconds": 37.95,
+      "infer_seconds": 20.21,
+      "trial": 201
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 223,
+      "wall_seconds": 34.57,
+      "infer_seconds": 18.73,
+      "trial": 202
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 35.39,
+      "infer_seconds": 19.2,
+      "trial": 203
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 298,
+      "wall_seconds": 46.2,
+      "infer_seconds": 25.08,
+      "trial": 204
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.45,
+      "infer_seconds": 33.62,
+      "trial": 205
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 244,
+      "wall_seconds": 38.57,
+      "infer_seconds": 20.72,
+      "trial": 206
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.69,
+      "infer_seconds": 19.84,
+      "trial": 207
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 35.89,
+      "infer_seconds": 19.68,
+      "trial": 208
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 253,
+      "wall_seconds": 40.88,
+      "infer_seconds": 21.31,
+      "trial": 209
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 270,
+      "wall_seconds": 41.88,
+      "infer_seconds": 22.76,
+      "trial": 210
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 278,
+      "wall_seconds": 43.39,
+      "infer_seconds": 23.52,
+      "trial": 211
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 253,
+      "wall_seconds": 39.01,
+      "infer_seconds": 21.43,
+      "trial": 212
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 248,
+      "wall_seconds": 38.61,
+      "infer_seconds": 20.93,
+      "trial": 213
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 263,
+      "wall_seconds": 40.76,
+      "infer_seconds": 22.1,
+      "trial": 214
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 239,
+      "wall_seconds": 36.1,
+      "infer_seconds": 20.09,
+      "trial": 215
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 68.78,
+      "infer_seconds": 33.7,
+      "trial": 216
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 229,
+      "wall_seconds": 40.43,
+      "infer_seconds": 19.41,
+      "trial": 217
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 238,
+      "wall_seconds": 37.97,
+      "infer_seconds": 19.68,
+      "trial": 218
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 218,
+      "wall_seconds": 33.55,
+      "infer_seconds": 18.14,
+      "trial": 219
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 36.2,
+      "infer_seconds": 19.63,
+      "trial": 220
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.06,
+      "infer_seconds": 33.69,
+      "trial": 221
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.85,
+      "infer_seconds": 33.66,
+      "trial": 222
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 35.31,
+      "infer_seconds": 19.05,
+      "trial": 223
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 248,
+      "wall_seconds": 38.55,
+      "infer_seconds": 20.82,
+      "trial": 224
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 35.48,
+      "infer_seconds": 19.15,
+      "trial": 225
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.67,
+      "infer_seconds": 33.31,
+      "trial": 226
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 246,
+      "wall_seconds": 36.34,
+      "infer_seconds": 20.64,
+      "trial": 227
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 249,
+      "wall_seconds": 38.65,
+      "infer_seconds": 20.81,
+      "trial": 228
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 213,
+      "wall_seconds": 32.99,
+      "infer_seconds": 17.9,
+      "trial": 229
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.57,
+      "infer_seconds": 33.52,
+      "trial": 230
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 33.91,
+      "infer_seconds": 18.34,
+      "trial": 231
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 239,
+      "wall_seconds": 36.88,
+      "infer_seconds": 20.07,
+      "trial": 232
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 347,
+      "wall_seconds": 53.99,
+      "infer_seconds": 29.14,
+      "trial": 233
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 224,
+      "wall_seconds": 34.82,
+      "infer_seconds": 18.84,
+      "trial": 234
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.06,
+      "infer_seconds": 33.68,
+      "trial": 235
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.1,
+      "infer_seconds": 33.7,
+      "trial": 236
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 246,
+      "wall_seconds": 38.21,
+      "infer_seconds": 20.71,
+      "trial": 237
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 259,
+      "wall_seconds": 40.39,
+      "infer_seconds": 21.85,
+      "trial": 238
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.1,
+      "infer_seconds": 33.64,
+      "trial": 239
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.71,
+      "infer_seconds": 33.64,
+      "trial": 240
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.14,
+      "infer_seconds": 33.58,
+      "trial": 241
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 229,
+      "wall_seconds": 35.35,
+      "infer_seconds": 19.26,
+      "trial": 242
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 34.11,
+      "infer_seconds": 18.43,
+      "trial": 243
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.03,
+      "infer_seconds": 33.68,
+      "trial": 244
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 274,
+      "wall_seconds": 42.61,
+      "infer_seconds": 23.06,
+      "trial": 245
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 278,
+      "wall_seconds": 43.08,
+      "infer_seconds": 23.4,
+      "trial": 246
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 259,
+      "wall_seconds": 40.17,
+      "infer_seconds": 21.79,
+      "trial": 247
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.26,
+      "infer_seconds": 33.67,
+      "trial": 248
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 62.25,
+      "infer_seconds": 33.62,
+      "trial": 249
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 226,
+      "wall_seconds": 35.46,
+      "infer_seconds": 19.08,
+      "trial": 250
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 271,
+      "wall_seconds": 42.08,
+      "infer_seconds": 22.77,
+      "trial": 251
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 222,
+      "wall_seconds": 34.51,
+      "infer_seconds": 18.67,
+      "trial": 252
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 215,
+      "wall_seconds": 33.19,
+      "infer_seconds": 18.13,
+      "trial": 253
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 284,
+      "wall_seconds": 43.8,
+      "infer_seconds": 23.9,
+      "trial": 254
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 248,
+      "wall_seconds": 37.19,
+      "infer_seconds": 20.9,
+      "trial": 255
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 269,
+      "wall_seconds": 40.67,
+      "infer_seconds": 22.35,
+      "trial": 256
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 60.85,
+      "infer_seconds": 32.53,
+      "trial": 257
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 264,
+      "wall_seconds": 40.48,
+      "infer_seconds": 21.42,
+      "trial": 258
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 278,
+      "wall_seconds": 42.16,
+      "infer_seconds": 22.17,
+      "trial": 259
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 235,
+      "wall_seconds": 36.41,
+      "infer_seconds": 19.75,
+      "trial": 260
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 61.69,
+      "infer_seconds": 33.49,
+      "trial": 261
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 281,
+      "wall_seconds": 43.9,
+      "infer_seconds": 23.7,
+      "trial": 262
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 215,
+      "wall_seconds": 34.26,
+      "infer_seconds": 18.19,
+      "trial": 263
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 308,
+      "wall_seconds": 48.98,
+      "infer_seconds": 26.05,
+      "trial": 264
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 221,
+      "wall_seconds": 35.23,
+      "infer_seconds": 18.71,
+      "trial": 265
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 251,
+      "wall_seconds": 39.81,
+      "infer_seconds": 21.21,
+      "trial": 266
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 274,
+      "wall_seconds": 43.43,
+      "infer_seconds": 23.12,
+      "trial": 267
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 260,
+      "wall_seconds": 40.91,
+      "infer_seconds": 21.96,
+      "trial": 268
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 241,
+      "wall_seconds": 38.7,
+      "infer_seconds": 20.53,
+      "trial": 269
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 37.36,
+      "infer_seconds": 19.85,
+      "trial": 270
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 269,
+      "wall_seconds": 42.59,
+      "infer_seconds": 22.67,
+      "trial": 271
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 225,
+      "wall_seconds": 35.86,
+      "infer_seconds": 19.01,
+      "trial": 272
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 234,
+      "wall_seconds": 37.52,
+      "infer_seconds": 19.8,
+      "trial": 273
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 223,
+      "wall_seconds": 35.73,
+      "infer_seconds": 18.95,
+      "trial": 274
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 236,
+      "wall_seconds": 37.28,
+      "infer_seconds": 19.99,
+      "trial": 275
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 219,
+      "wall_seconds": 34.33,
+      "infer_seconds": 18.55,
+      "trial": 276
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 234,
+      "wall_seconds": 37.03,
+      "infer_seconds": 19.74,
+      "trial": 277
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 63.33,
+      "infer_seconds": 33.71,
+      "trial": 278
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 63.78,
+      "infer_seconds": 33.89,
+      "trial": 279
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 224,
+      "wall_seconds": 34.88,
+      "infer_seconds": 18.9,
+      "trial": 280
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 256,
+      "wall_seconds": 40.89,
+      "infer_seconds": 21.69,
+      "trial": 281
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 262,
+      "wall_seconds": 41.78,
+      "infer_seconds": 22.14,
+      "trial": 282
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 273,
+      "wall_seconds": 43.45,
+      "infer_seconds": 22.94,
+      "trial": 283
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 227,
+      "wall_seconds": 36.02,
+      "infer_seconds": 19.24,
+      "trial": 284
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 258,
+      "wall_seconds": 41.03,
+      "infer_seconds": 21.86,
+      "trial": 285
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 220,
+      "wall_seconds": 35.27,
+      "infer_seconds": 18.69,
+      "trial": 286
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 252,
+      "wall_seconds": 39.89,
+      "infer_seconds": 21.25,
+      "trial": 287
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 254,
+      "wall_seconds": 40.51,
+      "infer_seconds": 21.48,
+      "trial": 288
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 296,
+      "wall_seconds": 47.42,
+      "infer_seconds": 25.07,
+      "trial": 289
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 210,
+      "wall_seconds": 33.49,
+      "infer_seconds": 17.74,
+      "trial": 290
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 185,
+      "wall_seconds": 29.61,
+      "infer_seconds": 15.63,
+      "trial": 291
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 63.88,
+      "infer_seconds": 33.78,
+      "trial": 292
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 260,
+      "wall_seconds": 41.24,
+      "infer_seconds": 21.98,
+      "trial": 293
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 400,
+      "wall_seconds": 64.14,
+      "infer_seconds": 33.95,
+      "trial": 294
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 239,
+      "wall_seconds": 38.26,
+      "infer_seconds": 20.17,
+      "trial": 295
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 233,
+      "wall_seconds": 36.56,
+      "infer_seconds": 19.74,
+      "trial": 296
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 366,
+      "wall_seconds": 58.31,
+      "infer_seconds": 31.0,
+      "trial": 297
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 253,
+      "wall_seconds": 40.22,
+      "infer_seconds": 21.38,
+      "trial": 298
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 225,
+      "wall_seconds": 36.05,
+      "infer_seconds": 19.06,
+      "trial": 299
+    }
+  ]
+}

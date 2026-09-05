@@ -1,0 +1,89 @@
+{
+  "task": "Isaac-Stack-Cube-Franka-IK-Rel-Visuomotor-v0",
+  "seed": 101,
+  "reset_joint_std": 0.0,
+  "horizon": 1200,
+  "prompt": "stack the cubes",
+  "policy_port": 8123,
+  "n_trials": 8,
+  "n_success": 6,
+  "success_rate": 0.75,
+  "ci_low": 0.40926987910258916,
+  "ci_high": 0.9285223111419724,
+  "ci_halfwidth": 0.2596262160196916,
+  "outcome_counts": {
+    "success": 6,
+    "horizon_exhausted": 2
+  },
+  "mean_steps_success": 225.7,
+  "mean_steps_failure": 1200.0,
+  "mean_wall_seconds": 76.0,
+  "total_wall_seconds": 608.0,
+  "infer_fraction": 0.5297687576066576,
+  "records": [
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 221,
+      "wall_seconds": 42.81,
+      "infer_seconds": 25.73,
+      "trial": 0
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 1200,
+      "wall_seconds": 181.45,
+      "infer_seconds": 100.17,
+      "trial": 1
+    },
+    {
+      "success": false,
+      "outcome": "horizon_exhausted",
+      "steps": 1200,
+      "wall_seconds": 197.56,
+      "infer_seconds": 100.84,
+      "trial": 2
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 212,
+      "wall_seconds": 35.69,
+      "infer_seconds": 17.91,
+      "trial": 3
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 228,
+      "wall_seconds": 37.43,
+      "infer_seconds": 19.25,
+      "trial": 4
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 240,
+      "wall_seconds": 39.22,
+      "infer_seconds": 20.01,
+      "trial": 5
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 242,
+      "wall_seconds": 38.91,
+      "infer_seconds": 20.39,
+      "trial": 6
+    },
+    {
+      "success": true,
+      "outcome": "success",
+      "steps": 211,
+      "wall_seconds": 34.95,
+      "infer_seconds": 17.81,
+      "trial": 7
+    }
+  ]
+}

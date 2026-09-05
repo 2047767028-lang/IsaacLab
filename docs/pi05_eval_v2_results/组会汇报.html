@@ -1,0 +1,627 @@
+<title>扰动增广第二层验证</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+
+<style>
+  :root {
+    color-scheme: light;
+    --ink:        #101418;
+    --ink-2:      #39424d;
+    --muted:      #5c6672;
+    --paper:      #fbfbfc;
+    --surface:    #f1f4f7;
+    --surface-2:  #e7ecf1;
+    --rule:       #d5dbe3;
+    --rule-soft:  #e6eaef;
+    --accent:     #2a78d6;
+    --warn:       #eb6834;
+    --good:       #1baf7a;
+    --s-baseline: #2a78d6;
+    --s-arc:      #eb6834;
+    --s-mixed:    #1baf7a;
+    --stamp-bg:   #fdefe8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --ink:        #e7ebf0;
+      --ink-2:      #b9c2cc;
+      --muted:      #8e99a6;
+      --paper:      #11151a;
+      --surface:    #1a1f26;
+      --surface-2:  #222831;
+      --rule:       #2c333c;
+      --rule-soft:  #232932;
+      --accent:     #3987e5;
+      --warn:       #d95926;
+      --good:       #199e70;
+      --s-baseline: #3987e5;
+      --s-arc:      #d95926;
+      --s-mixed:    #199e70;
+      --stamp-bg:   #2a1b13;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ink:        #e7ebf0;
+    --ink-2:      #b9c2cc;
+    --muted:      #8e99a6;
+    --paper:      #11151a;
+    --surface:    #1a1f26;
+    --surface-2:  #222831;
+    --rule:       #2c333c;
+    --rule-soft:  #232932;
+    --accent:     #3987e5;
+    --warn:       #d95926;
+    --good:       #199e70;
+    --s-baseline: #3987e5;
+    --s-arc:      #d95926;
+    --s-mixed:    #199e70;
+    --stamp-bg:   #2a1b13;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "IBM Plex Serif", Georgia, "Songti SC", serif;
+    font-size: 16.5px;
+    line-height: 1.72;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 28px 120px; }
+  .col  { max-width: 640px; }
+
+  /* ---------- masthead ---------- */
+  .masthead { padding: 56px 0 28px; border-bottom: 2px solid var(--ink); }
+  .kicker {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; font-weight: 500; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--muted); margin: 0 0 14px;
+  }
+  h1 {
+    font-family: "IBM Plex Sans", system-ui, "PingFang SC", sans-serif;
+    font-weight: 700; font-size: clamp(30px, 5vw, 44px); line-height: 1.14;
+    letter-spacing: -.015em; margin: 0 0 16px; text-wrap: balance;
+  }
+  .dek {
+    font-size: 18px; color: var(--ink-2); margin: 0; max-width: 620px;
+    text-wrap: pretty;
+  }
+  .byline {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px; color: var(--muted); margin-top: 22px;
+    display: flex; flex-wrap: wrap; gap: 6px 22px;
+  }
+
+  /* ---------- bottom line ---------- */
+  .bottomline {
+    margin: 40px 0 8px; padding: 26px 28px;
+    background: var(--surface); border-left: 3px solid var(--accent);
+  }
+  .bottomline .lbl {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .bottomline p {
+    margin: 0; font-size: 19px; line-height: 1.6; text-wrap: pretty;
+  }
+  .bottomline strong { font-weight: 600; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 60px; }
+  h2 {
+    font-family: "IBM Plex Sans", system-ui, "PingFang SC", sans-serif;
+    font-weight: 600; font-size: 23px; line-height: 1.3; letter-spacing: -.01em;
+    margin: 0 0 6px; display: flex; gap: 14px; align-items: baseline;
+    text-wrap: balance;
+  }
+  h2 .num {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 13px; font-weight: 500; color: var(--accent);
+    flex: none; padding-top: 2px;
+  }
+  h2 + .sub {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px; color: var(--muted); margin: 0 0 22px 34px;
+    letter-spacing: .02em;
+  }
+  h3 {
+    font-family: "IBM Plex Sans", system-ui, "PingFang SC", sans-serif;
+    font-weight: 600; font-size: 16px; margin: 32px 0 8px; color: var(--ink);
+  }
+  p { margin: 0 0 16px; text-wrap: pretty; }
+  .col > p, .col > ul { max-width: 640px; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  code, .mono {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .87em; background: var(--surface); padding: 1px 5px;
+    border: 1px solid var(--rule-soft);
+  }
+  ul { padding-left: 20px; margin: 0 0 16px; }
+  li { margin-bottom: 8px; }
+
+  /* ---------- data table ---------- */
+  .tablewrap { overflow-x: auto; margin: 22px 0 10px; }
+  table {
+    border-collapse: collapse; width: 100%; min-width: 560px;
+    font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 14.5px;
+  }
+  caption {
+    text-align: left; font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); padding-bottom: 10px;
+  }
+  th, td { padding: 9px 14px 9px 0; text-align: left; border-bottom: 1px solid var(--rule-soft); }
+  thead th {
+    font-weight: 600; font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--muted); border-bottom: 1px solid var(--rule);
+  }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; padding-right: 18px; }
+  tr.total td { border-top: 1px solid var(--rule); border-bottom: none; font-weight: 600; }
+  .swatch {
+    display: inline-block; width: 9px; height: 9px; margin-right: 9px;
+    vertical-align: 1px; border-radius: 50%;
+  }
+
+  /* ---------- chart ---------- */
+  figure { margin: 26px 0 8px; }
+  .chartcard {
+    background: var(--surface); border: 1px solid var(--rule-soft);
+    padding: 20px 18px 12px; overflow-x: auto;
+  }
+  figcaption {
+    font-size: 13.5px; color: var(--muted); margin-top: 12px; max-width: 640px;
+    line-height: 1.6;
+  }
+  .legend {
+    display: flex; gap: 20px; flex-wrap: wrap; margin: 0 0 14px;
+    font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 12.5px; color: var(--ink-2);
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+
+  /* ---------- retraction ---------- */
+  .retracted {
+    margin: 24px 0; border: 1px solid var(--warn); background: var(--stamp-bg);
+    padding: 20px 24px;
+  }
+  .retracted .stamp {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 11px; font-weight: 600; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--warn); margin: 0 0 12px;
+  }
+  .retracted .claim {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 14.5px; color: var(--ink-2); text-decoration: line-through;
+    text-decoration-color: var(--warn); text-decoration-thickness: 1.5px;
+    margin: 0 0 12px;
+  }
+  .retracted p:last-child { margin: 0; font-size: 15px; }
+
+  /* ---------- callout ---------- */
+  .note {
+    border-left: 2px solid var(--rule); padding: 2px 0 2px 18px;
+    color: var(--ink-2); font-size: 15.5px; margin: 20px 0;
+  }
+  .note strong { color: var(--ink); font-weight: 600; }
+
+  /* ---------- stat row ---------- */
+  .stats {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft);
+    margin: 24px 0;
+  }
+  .stat { background: var(--paper); padding: 18px 18px 16px; }
+  .stat .v {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 26px; font-weight: 500; line-height: 1.1; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat .k {
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 12.5px; color: var(--muted); margin-top: 7px; line-height: 1.45;
+  }
+
+  details {
+    border-top: 1px solid var(--rule-soft); padding: 14px 0 4px; margin-top: 8px;
+  }
+  summary {
+    cursor: pointer; font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 14.5px; font-weight: 500; color: var(--ink-2);
+  }
+  details[open] summary { margin-bottom: 12px; }
+
+  footer {
+    margin-top: 76px; padding-top: 22px; border-top: 1px solid var(--rule);
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 12px; color: var(--muted); line-height: 1.8;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="kicker">主线二 · 第二层验证</p>
+    <h1>扰动增广第二层验证</h1>
+    <p class="dek">
+      给 MimicGen 生成的轨迹加上接触锚定的弧线扰动，训出来的 pi0.5 策略会更强吗？
+      三个数据集、五次训练、1500 次闭环 rollout 之后的答案，以及一个必须撤回的旧结论。
+    </p>
+    <p class="byline">
+      <span>2026-08-29</span>
+      <span>Isaac Lab 2.3.2 · Isaac Sim 5.1</span>
+      <span>pi0.5 LoRA · openpi</span>
+      <span>Stack-Cube-Franka-IK-Rel-Visuomotor</span>
+    </p>
+  </header>
+
+  <div class="bottomline">
+    <p class="lbl">结论先说</p>
+    <p>
+      修好训练配置之后，扰动增广数据<strong>既没测出害处，也没测出益处</strong>。
+      先前那个「有害 11.3 个百分点、p=0.001」的结论<strong>已撤回</strong>——
+      它的真实来源是学习率配错导致的训练不收敛。真正有价值的产出是一条方法学结论：
+      <strong>单次训练的组间对比在这个任务上不可信</strong>。
+    </p>
+  </div>
+
+  <section>
+    <h2><span class="num">01</span>三组数据集的成绩</h2>
+    <p class="sub">每组 n=300 闭环 rollout · Wilson 95% 置信区间 · 同 seed 配对</p>
+
+    <div class="col">
+      <p>
+        三个数据集各自训练 pi0.5 LoRA，再放回 Isaac Sim 跑闭环叠方块任务。
+        <strong>baseline</strong> 是 380 条干净的 MimicGen 演示；<strong>arc</strong> 是 358 条
+        全部加了 1.2cm 弧线扰动的演示；<strong>mixed</strong> 是 190 条干净 + 190 条扰动，
+        总量固定在 380 条以排除数据量这个混淆因素。
+      </p>
+      <p>
+        为了把「数据集的影响」和「训练本身的随机性」分开，baseline 和 arc 各训了
+        <strong>两个不同的训练种子</strong>。
+      </p>
+    </div>
+
+    <figure>
+      <div class="legend" aria-hidden="true">
+        <span><i class="swatch" style="background:var(--s-baseline)"></i>baseline（380 干净）</span>
+        <span><i class="swatch" style="background:var(--s-arc)"></i>arc（358 全扰动）</span>
+        <span><i class="swatch" style="background:var(--s-mixed)"></i>mixed（190+190）</span>
+      </div>
+      <div class="chartcard">
+        <svg viewBox="0 0 720 300" width="100%" style="max-width:720px;display:block"
+             role="img" aria-label="五次训练的闭环成功率与95%置信区间点线图，所有区间彼此重叠">
+          <g font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--muted)">
+            <line x1="212.3" y1="26" x2="212.3" y2="252" stroke="var(--rule)" stroke-width="1"/>
+            <line x1="316.2" y1="26" x2="316.2" y2="252" stroke="var(--rule)" stroke-width="1"/>
+            <line x1="420.0" y1="26" x2="420.0" y2="252" stroke="var(--rule)" stroke-width="1"/>
+            <line x1="523.8" y1="26" x2="523.8" y2="252" stroke="var(--rule)" stroke-width="1"/>
+            <line x1="627.6" y1="26" x2="627.6" y2="252" stroke="var(--rule)" stroke-width="1"/>
+            <text x="212.3" y="272" text-anchor="middle">55%</text>
+            <text x="316.2" y="272" text-anchor="middle">60%</text>
+            <text x="420.0" y="272" text-anchor="middle">65%</text>
+            <text x="523.8" y="272" text-anchor="middle">70%</text>
+            <text x="627.6" y="272" text-anchor="middle">75%</text>
+          </g>
+
+          <g font-family="IBM Plex Sans, sans-serif" font-size="12.5" fill="var(--ink-2)">
+            <text x="140" y="48"  text-anchor="end">baseline · 种子 42</text>
+            <text x="140" y="94"  text-anchor="end">baseline · 种子 777</text>
+            <text x="140" y="140" text-anchor="end">arc · 种子 42</text>
+            <text x="140" y="186" text-anchor="end">arc · 种子 777</text>
+            <text x="140" y="232" text-anchor="end">mixed · 种子 42</text>
+          </g>
+
+          <g stroke-linecap="round">
+            <line x1="425.8" y1="44" x2="638.7" y2="44" stroke="var(--s-baseline)" stroke-width="2" opacity=".38"/>
+            <circle cx="537.7" cy="44" r="5.5" fill="var(--s-baseline)" stroke="var(--surface)" stroke-width="2"/>
+            <line x1="347.1" y1="90" x2="567.0" y2="90" stroke="var(--s-baseline)" stroke-width="2" opacity=".38"/>
+            <circle cx="461.5" cy="90" r="5.5" fill="var(--s-baseline)" stroke="var(--surface)" stroke-width="2"/>
+            <line x1="311.6" y1="136" x2="534.0" y2="136" stroke="var(--s-arc)" stroke-width="2" opacity=".38"/>
+            <circle cx="426.9" cy="136" r="5.5" fill="var(--s-arc)" stroke="var(--surface)" stroke-width="2"/>
+            <line x1="382.8" y1="182" x2="599.6" y2="182" stroke="var(--s-arc)" stroke-width="2" opacity=".38"/>
+            <circle cx="496.2" cy="182" r="5.5" fill="var(--s-arc)" stroke="var(--surface)" stroke-width="2"/>
+            <line x1="213.1" y1="228" x2="441.4" y2="228" stroke="var(--s-mixed)" stroke-width="2" opacity=".38"/>
+            <circle cx="330.1" cy="228" r="5.5" fill="var(--s-mixed)" stroke="var(--surface)" stroke-width="2"/>
+          </g>
+
+          <g font-family="IBM Plex Mono, monospace" font-size="12" font-weight="500"
+             fill="var(--ink)" style="font-variant-numeric:tabular-nums">
+            <text x="652" y="48">70.7</text>
+            <text x="581" y="94">67.0</text>
+            <text x="548" y="140">65.3</text>
+            <text x="613" y="186">68.7</text>
+            <text x="455" y="232">60.7</text>
+          </g>
+        </svg>
+      </div>
+      <figcaption>
+        点是成功率，横线是 95% 置信区间。<strong>五个区间彼此大量重叠</strong>；
+        两个 arc 模型（65.3 / 68.7）把两个 baseline（70.7 / 67.0）夹在中间——
+        换一个训练种子，arc 就从「比 baseline 差 5pp」变成「比 baseline 好 1.7pp」。
+      </figcaption>
+    </figure>
+
+    <div class="tablewrap">
+      <table>
+        <caption>闭环成功率明细</caption>
+        <thead>
+          <tr>
+            <th>数据集</th><th>训练种子</th>
+            <th class="num">成功 / 总数</th><th class="num">成功率</th><th class="num">95% CI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><i class="swatch" style="background:var(--s-baseline)"></i>baseline</td><td>42</td>
+              <td class="num">212 / 300</td><td class="num">70.67%</td><td class="num">65.3 – 75.5</td></tr>
+          <tr><td><i class="swatch" style="background:var(--s-baseline)"></i>baseline</td><td>777</td>
+              <td class="num">201 / 300</td><td class="num">67.00%</td><td class="num">61.5 – 72.1</td></tr>
+          <tr><td><i class="swatch" style="background:var(--s-arc)"></i>arc</td><td>42</td>
+              <td class="num">196 / 300</td><td class="num">65.33%</td><td class="num">59.8 – 70.5</td></tr>
+          <tr><td><i class="swatch" style="background:var(--s-arc)"></i>arc</td><td>777</td>
+              <td class="num">206 / 300</td><td class="num">68.67%</td><td class="num">63.2 – 73.7</td></tr>
+          <tr><td><i class="swatch" style="background:var(--s-mixed)"></i>mixed</td><td>42</td>
+              <td class="num">182 / 300</td><td class="num">60.67%</td><td class="num">55.0 – 66.0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <div class="note">
+        <strong>种子平均后，数据集差异几乎消失。</strong>
+        把两个种子合并（每组 600 次 rollout）：baseline 68.83%、arc 67.00%，
+        差异 <span class="mono">−1.83pp</span>，95% CI <span class="mono">[−7.11, +3.45]</span>。
+        而只看单个种子时是 −5.33pp。<strong>表观效应的大部分是训练随机性。</strong>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02</span>一个必须撤回的结论</h2>
+    <p class="sub">学习率配错 · 静默失败 · 伪造出 p=0.001</p>
+
+    <div class="retracted">
+      <p class="stamp">已撤回</p>
+      <p class="claim">baseline 81.0% vs arc 69.7%，差 −11.3pp，McNemar p=0.0011 → 「扰动增广损害策略性能」</p>
+      <p>
+        这个结论的两个数字都来自<strong>从未收敛</strong>的模型。它不是一个偏弱的证据，
+        而是一个方向和量级都不可信的伪发现。
+      </p>
+    </div>
+
+    <div class="col">
+      <p>
+        病根在一行超参数。训练用的余弦退火调度写成了
+        <code>peak_lr = 5e-5</code>、<code>decay_lr = 5e-5</code>——
+        <strong>起点和终点相同，等于全程恒定学习率</strong>，而且是 openpi 默认峰值的两倍、
+        没有 warmup。openpi 自己在日志里打过一行
+        <code>this results in a constant schedule</code>，当时没人注意。
+      </p>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="v">0.989</div>
+          <div class="k">v1：权重漂移速率<br>末段 ÷ 首段（毫无减速）</div>
+        </div>
+        <div class="stat">
+          <div class="v" style="color:var(--good)">0.069</div>
+          <div class="k">v2 修复后：同一指标<br>（权重已落定）</div>
+        </div>
+        <div class="stat">
+          <div class="v" style="color:var(--warn)">22.5<span style="font-size:16px">pp</span></div>
+          <div class="k">v1：<strong>同一次训练</strong>内<br>相隔 4000 步的成功率差</div>
+        </div>
+        <div class="stat">
+          <div class="v">11.3<span style="font-size:16px">pp</span></div>
+          <div class="k">当时被当作结论的<br>数据集间差异</div>
+        </div>
+      </div>
+
+      <p>
+        右边两个数字是关键：<strong>训练内部的波动（22.5pp）是被当作结论的数据效应（11.3pp）的两倍。</strong>
+        直接测量 step 16000 与 19999 两个 checkpoint——同一次训练、同一批数据——
+        闭环成功率是 58.5% 与 81.0%，置信区间完全不重叠。
+      </p>
+
+      <details>
+        <summary>怎么判断一次训练到底收敛没有</summary>
+        <p>
+          不要只看 loss 曲线。两个更硬的判据：
+        </p>
+        <ul>
+          <li><strong><code>param_norm</code> 分段增量是否逐段减速。</strong>
+            v1 的四个 5000 步窗口增量是 +1.208 / +1.204 / +1.193 / +1.195——
+            第 20000 步的权重仍以第 0 步的速度在漂。修复后是
+            +0.149 / +0.111 / +0.043 / +0.010。</li>
+          <li><strong>末段 loss 斜率的 t 值是否已经 |t| &lt; 2。</strong>
+            注意窗口要短：v2 的末 1000 步 t=+0.18（已走平），但拉到末 4000 步会算出
+            t=−17.4，因为混进了早期还在改进的阶段。</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span>噪声底线：这次实验的分辨率</h2>
+    <p class="sub">同一批数据 · 只换训练种子 · 各 n=300</p>
+
+    <div class="col">
+      <p>
+        修好收敛之后，剩下的问题是：<strong>同样的数据重训一次，成绩会飘多少？</strong>
+        没有这把尺子，任何「A 组比 B 组高几个百分点」的说法都无法判读。
+      </p>
+      <ul>
+        <li>baseline：70.67% → 67.00%，<span class="mono">−3.67pp</span>（p=0.359）</li>
+        <li>arc：65.33% → 68.67%，<span class="mono">+3.33pp</span>（p=0.440）</li>
+      </ul>
+      <p>
+        两个种子差异<strong>本身都不显著</strong>，所以严格的表述是
+        <strong>训练噪声 ≤ 约 4pp</strong>，而不是「已测得噪声为 3.5pp」。
+        这也意味着 −5.33pp 的数据集差异与噪声同量级，不能直接归因于数据。
+      </p>
+      <div class="note">
+        <strong>等价性怎么说。</strong>
+        p 值不显著<em>不等于</em>没有差异。按 TOST 等价检验，本实验支持的结论是
+        「两组差异不超过 <span class="mono">±11.3pp</span>」——
+        只有当你认为 11pp 以内算「性能几乎一样」时，才能说它们等价。
+        要把这个界限收窄到 ±8pp，需要约 1485 次 rollout，是当前的 5 倍。
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">04</span>为什么 arc 扰动没有效果</h2>
+    <p class="sub">对 10 条源演示的直接度量 · 变换到物体坐标系以除掉物体位置的影响</p>
+
+    <div class="col">
+      <p>
+        设计这个方法时的前提是：<em>arc 扰动本质上在模拟人类采集数据时的路径变化</em>。
+        这个前提<strong>经实测不成立</strong>，而且差在最要紧的那一维——方向。
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>人类演示的路径变化 vs arc 扰动</caption>
+        <thead>
+          <tr><th>量</th><th class="num">subtask 1<br>接近红块</th><th class="num">subtask 3<br>接近绿块</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>单条路径的自然弯曲<br><span style="color:var(--muted);font-size:13px">相对自身两端直线的最大垂直偏离</span></td>
+              <td class="num">4.79 cm</td><td class="num">9.33 cm</td></tr>
+          <tr><td>跨演示残差离散度<br><span style="color:var(--muted);font-size:13px">已除掉物体位置差异</span></td>
+              <td class="num">2.83 cm</td><td class="num">4.61 cm</td></tr>
+          <tr class="total"><td>arc 峰值扰动</td>
+              <td class="num" style="color:var(--warn)">1.2 cm</td>
+              <td class="num" style="color:var(--warn)">1.2 cm</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <p>
+        幅度上 arc 只有人类自然弯曲的 13%~25%。但真正的问题是<strong>方向</strong>：
+        subtask 3 的 10 条人类演示<strong>全部向上</strong>，仰角 +47.2° ~ +67.0°，
+        方向合成长度 R=0.850（各向同性随机时 R 的中位数只有 0.285，经验 p&lt;0.0001）。
+        而 arc 用的是 <code>torch.randn(3)</code> 归一化——<strong>各向同性随机方向，
+        约一半时间在往下扰动</strong>。
+      </p>
+      <div class="note">
+        <strong>更根本的一点：人类那个向上的弧线不是「扰动」，它就是策略本身。</strong>
+        抬起来绕过去是完成任务的正确方式。而 MimicGen 是照搬源演示的路径形状再做位姿变换的，
+        所以这个抬升<strong>本来就完整保留在 baseline 数据里</strong>
+        （实测 144 条生成数据 98.6% 仍向上，仰角均值 +55.0°，对照源演示的 +58°）。
+        本实验真实的对照关系因此是「MimicGen 数据 <em>vs</em> MimicGen 数据 + 各向同性随机噪声」，
+        而不是「MimicGen <em>vs</em> 人类风格」。
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">05</span>附带发现：MimicGen 的失败去哪了</h2>
+    <p class="sub">1050 次生成尝试只有 36% 成功 · 此前无人分析</p>
+
+    <div class="col">
+      <p>
+        复现环境自带的 <code>cubes_stacked</code> 判据，并<strong>先在成功样本上验证 100% 通过</strong>
+        才拿去分类失败样本（第一版复现 0% 通过，暴露出两个坑：<code>gripper_pos</code> 观测里
+        第二根手指是<strong>取负存储</strong>的；成功判定要按「任意帧曾满足」而非「末帧满足」）。
+      </p>
+    </div>
+
+    <div class="tablewrap">
+      <table>
+        <caption>失败模式分布（baseline / arc 两组几乎一致）</caption>
+        <thead><tr><th>失败模式</th><th class="num">baseline</th><th class="num">arc</th></tr></thead>
+        <tbody>
+          <tr><td>抓起红块但没叠上蓝块</td><td class="num">55.8%</td><td class="num">56.4%</td></tr>
+          <tr><td>红块叠好，但第二次抓取整个失败</td><td class="num">28.2%</td><td class="num">26.7%</td></tr>
+          <tr><td>几何已叠好，但夹爪判据没过</td><td class="num">11.3%</td><td class="num">11.8%</td></tr>
+          <tr><td>抓起绿块但没叠好</td><td class="num">3.4%</td><td class="num">3.0%</td></tr>
+          <tr><td>没抓起红块</td><td class="num">1.2%</td><td class="num">1.9%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <p>
+        <strong>其中 11% 是判据误杀，可以直接回收。</strong>
+        成功判据要求两根手指精确停在 0.0400、容差仅 ±0.104mm。这批样本停在 0.0387——
+        差 1.2 毫米，但<strong>方块其实已经松开了</strong>。已验证成功样本能到达精确的
+        0.04000，所以这是 episode 提前结束的截断问题，不是稳态误差。
+        把容差放宽到 3mm 可回收其中 71%，<strong>生成产出约提升 5 个百分点</strong>。
+      </p>
+      <p>
+        主导的那 56% 则是真实的物理失败，而且判据阈值定得很准：末帧方块中心距呈明显<strong>双峰</strong>——
+        1~2cm（叠上了）和 5~6cm（滑到旁边，约等于一个边长 4.68cm），
+        而 3~4cm 这个「既没叠上也没滑开」的谷底全场只有 5/1050 例。
+        方块不可能半边悬空停住，4cm 的阈值正落在空谷里。
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">06</span>方法学结论</h2>
+    <p class="sub">可能比原问题本身更有价值</p>
+
+    <div class="col">
+      <p>
+        <strong>用「每组训练一次 + 评测 300 次」这种标准做法，在这个任务上无法分辨约 7pp 以内的数据集差异。</strong>
+        而绝大多数同类工作正是这么做的。三条证据构成完整链路：
+      </p>
+      <ul>
+        <li>训练不收敛时，<strong>单次训练内部</strong>就能产生 22.5pp 的波动，足以伪造出 p=0.001 的显著结果；</li>
+        <li>即使训练收敛，<strong>换个训练种子</strong>仍有 ±3~4pp 的波动；</li>
+        <li>种子平均能把表观效应从 −5.33pp 压到 −1.83pp——差值的大部分本来就是噪声。</li>
+      </ul>
+      <p>
+        推论很直接：<strong>任何「A 组比 B 组好 X 个百分点」的结论，都应该先报噪声底线再报 X。</strong>
+        每组多个种子取平均不是锦上添花，是这类实验能不能成立的前提。
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">07</span>尚未确认 · 下一步</h2>
+    <p class="sub">如实标注不确定的部分</p>
+
+    <div class="col">
+      <ul>
+        <li>
+          <strong>mixed 组只有一个训练种子。</strong>
+          它的 60.67% 相对 baseline 是 −10.00pp、p=0.0078，是全研究<em>唯一</em>统计显著的对比。
+          但已知种子波动有 ±3.7pp，单种子撑不住这个结论。
+          第二个种子（777）正在训练中，结论待确认。
+        </li>
+        <li>
+          <strong>不能说「两组等价」。</strong>
+          置信区间 [−7.1, +3.5] 同时包含 0 和一个 7pp 的真实劣势。
+          本实验只能排除大于约 11pp 的效应。
+        </li>
+        <li>
+          <strong>训练预算被压缩过。</strong>
+          受 12 小时窗口限制，v2 用的是 10000 步而非 20000 步（退火曲线同步压缩，
+          所以模型是收敛的，只是训练总量减半）。更长的训练是否改变结论，未测。
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div>五次训练 · 1500 次闭环 rollout · 全部评测协议一致（n=300，horizon=400，reset_joint_std=0，同 seed 配对）</div>
+    <div>评测桥接 <span class="mono">scripts/imitation_learning/openpi/play_policy_server.py</span></div>
+    <div>完整工作记忆见 CLAUDE.md 主线二 §2.9 · 原始结果 JSON 含每次 rollout 的成败与步数</div>
+  </footer>
+
+</div>
